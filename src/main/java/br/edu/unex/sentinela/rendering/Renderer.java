@@ -3,6 +3,8 @@ package br.edu.unex.sentinela.rendering;
 import br.edu.unex.sentinela.app.GameApplication;
 import br.edu.unex.sentinela.entity.Player;
 import br.edu.unex.sentinela.world.GameWorld;
+import br.edu.unex.sentinela.world.TileMap;
+import br.edu.unex.sentinela.world.Tile;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -40,11 +42,45 @@ public class Renderer {
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, GameApplication.WIDTH, GameApplication.HEIGHT);
 
-        // Fase 2: Inspeciona o estado matemático atual da entidade "Player" e a desenha.
+        // Fase 2: Pinta a topografia geométrica mapeada pela classe TileMap (o piso por onde o ator caminhará).
+        drawTileMap(world.getTileMap());
+
+        // Fase 3: Inspeciona o estado matemático atual da entidade "Player" e a desenha por cima de tudo.
         drawPlayer(world.getPlayer());
 
-        // Fase 3: Sobrepõe textos informativos para acompanhamento e verificação do funcionamento interno.
+        // Fase 4: Sobrepõe textos informativos para acompanhamento e verificação do funcionamento interno.
         drawDebugInfo(deltaTime);
+    }
+
+    /**
+     * Iteração em grade bidimensional para ler cada bloco da Matriz e colori-lo adequadamente 
+     * criando o fundo da fase, peça por peça, da esquerda para a direita, de cima para baixo.
+     * 
+     * @param map Objeto mapa abstrato contendo as lógicas estruturais numéricas.
+     */
+    private void drawTileMap(TileMap map) {
+        for (int c = 0; c < map.getCols(); c++) {
+            for (int r = 0; r < map.getRows(); r++) {
+                Tile tile = map.getTile(c, r);
+                
+                // Converte a propriedade numérica categórica em espectros visíveis de cor.
+                if (tile.getType() == 1) {
+                    gc.setFill(Color.DARKGRAY); // Tipo 1: Parede
+                } else if (tile.getType() == 2) {
+                    gc.setFill(Color.SADDLEBROWN); // Tipo 2: Lama
+                } else {
+                    gc.setFill(Color.DARKGREEN); // Tipo 0: Chão transitável padrão
+                }
+                
+                // Transforma as coordenadas abstratas da matriz (ex: coluna 3, linha 2) em
+                // posições absolutas na tela multiplicando pelo tamanho do bloco.
+                gc.fillRect(c * TileMap.TILE_SIZE, r * TileMap.TILE_SIZE, TileMap.TILE_SIZE, TileMap.TILE_SIZE);
+                
+                // Desenha uma moldura tênue para facilitar a percepção da grade durante a depuração visual.
+                gc.setStroke(Color.color(0, 0, 0, 0.2));
+                gc.strokeRect(c * TileMap.TILE_SIZE, r * TileMap.TILE_SIZE, TileMap.TILE_SIZE, TileMap.TILE_SIZE);
+            }
+        }
     }
 
     /**
@@ -56,10 +92,8 @@ public class Renderer {
         // Seleciona o pincel virtual na cor azul.
         gc.setFill(Color.BLUE);
         
-        // O jogador foi especificado com dimensões estáticas de 32x32 pixels. 
-        // Subtrair metade (16) das posições "x" e "y" faz com que o cálculo seja centralizado,
-        // em vez de começar no canto superior esquerdo da figura.
-        gc.fillRect(player.getX() - 16, player.getY() - 16, 32, 32);
+        // Pinta um retângulo na exata coordenada espacial baseada nas dimensões da caixa de colisão do ator.
+        gc.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
     }
 
     /**
@@ -68,19 +102,14 @@ public class Renderer {
      * @param deltaTime Fração de segundo transcorrida, da qual é derivada a taxa de "Quadros por Segundo" (FPS).
      */
     private void drawDebugInfo(double deltaTime) {
-        // Configura o pincel para branco e a tipografia padrão para garantir boa visibilidade contra o fundo preto.
+        // Configura o pincel para branco e a tipografia padrão para garantir boa visibilidade.
         gc.setFill(Color.WHITE);
         gc.setFont(new Font("Consolas", 14));
         
-        // Quadros por Segundo (FPS) corresponde matematicamente ao inverso de quanto dura um único quadro.
-        // Dividir um segundo pelo tempo transcorrido resulta na velocidade atual de desenho da máquina.
         int fps = (int) (1.0 / deltaTime);
-        
-        // Monta os textos e formata os números para que se tornem legíveis por humanos.
         String fpsText = String.format("FPS: %d", fps);
         String dtText = String.format("DeltaTime: %.4f s", deltaTime);
 
-        // Instrui a ferramenta a carimbar esses textos em cantos específicos (X=10, Y=20 e Y=40).
         gc.fillText(fpsText, 10, 20);
         gc.fillText(dtText, 10, 40);
     }
