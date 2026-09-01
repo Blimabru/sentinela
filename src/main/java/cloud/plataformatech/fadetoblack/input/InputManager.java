@@ -1,4 +1,4 @@
-package br.edu.unex.sentinela.input;
+package cloud.plataformatech.fadetoblack.input;
 
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;

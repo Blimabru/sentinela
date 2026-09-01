@@ -1,8 +1,8 @@
-package br.edu.unex.sentinela.entity;
+package cloud.plataformatech.fadetoblack.entity;
 
-import br.edu.unex.sentinela.input.InputManager;
-import br.edu.unex.sentinela.world.TileMap;
-import br.edu.unex.sentinela.world.Tile;
+import cloud.plataformatech.fadetoblack.input.InputManager;
+import cloud.plataformatech.fadetoblack.world.TileMap;
+import cloud.plataformatech.fadetoblack.world.Tile;
 import javafx.scene.input.KeyCode;
 
 /**
