@@ -56,21 +56,40 @@ O projeto já inclui o **Maven Wrapper** embarcado, o que significa que você **
 
 ## 🗺️ Entregas e Fases do Desenvolvimento
 
-O desenvolvimento deste repositório acompanhou os módulos práticos da disciplina:
+O desenvolvimento deste repositório acompanhou os módulos práticos da disciplina. Abaixo você encontra a explicação conceitual de cada entrega e onde encontrar o código-fonte correspondente.
 
-- [x] **Entrega 1:** Definição da Temática e História (Branch: `docs/tema`)
-- [x] **Entrega 2:** Arquitetura do Jogo e Prática do Game Loop (Branch: `feature/gameloop`)
-- [x] **Entrega 3:** Criação do TileMap e Colisões Físicas AABB (Branch: `feature/tilemap`)
-- [x] **Entrega 4:** Navegação Autônoma de Agentes com Algoritmo A* (Branch: `feature/astar`)
+### 1. Definição da Temática e História
+A fase de planejamento onde a "alma" do jogo foi concebida. Definimos que seria um jogo *Dark Fantasy* no qual o personagem busca recuperar sua "fé".
+- **Onde encontrar:** Os documentos textuais detalhando a história, arquétipos de inimigos e mecânicas de "fé" estão na pasta `docs/`.
+- **Branch Histórica:** `docs/tema` (ou os primeiros commits da `main`).
 
-*(O andamento principal encontra-se unificado na branch `develop` / `main`).*
+### 2. Arquitetura do Jogo e Prática do Game Loop
+Nesta etapa, construímos o "motor" do jogo do zero. O Game Loop é um ciclo infinito que roda dezenas de vezes por segundo, responsável por duas coisas vitais: **Atualizar a Lógica (Física/Matemática)** e **Renderizar os Gráficos na Tela**. Desvinculamos a velocidade da física da velocidade da máquina usando a variável `deltaTime`.
+- **Como funciona:** O `AnimationTimer` do JavaFX pulsa o loop. A classe `GameWorld` propaga o `update()` para as entidades, enquanto o `Renderer` limpa e repinta o quadro.
+- **Onde encontrar:** 
+  - `src/main/java/br/edu/unex/sentinela/core/GameEngine.java` (O coração do Loop)
+  - `src/main/java/br/edu/unex/sentinela/input/InputManager.java` (Captura de teclado)
+  - `src/main/java/br/edu/unex/sentinela/rendering/Renderer.java` (Ilustrador de vídeo)
+- **Branch Histórica:** `feature/gameloop`
 
----
+### 3. Criação do TileMap e Colisões Físicas AABB
+A passagem do cenário imaginário para a estrutura de dados. Criamos o mapa usando uma **Matriz Bidimensional (Grid)**, onde cada "célula" (Tile) possui propriedades como Custo de Movimento e Permissão de Passagem (Walkable).
+- **Como funciona:** O Jogador possui uma caixa de colisão retangular (Bounding Box). Antes de permitir que ele mova seus pixels pela tela, o jogo checa os 4 cantos imaginários da caixa contra as células matriziais do `TileMap`. Se esbarrar em uma parede, o movimento é cancelado. Adicionamos também um bloco de "Lama" que reduz matematicamente a velocidade de travessia.
+- **Onde encontrar:**
+  - `src/main/java/br/edu/unex/sentinela/world/Tile.java` (A estrutura base do bloco de chão)
+  - `src/main/java/br/edu/unex/sentinela/world/TileMap.java` (A matriz geográfica instanciada)
+  - `src/main/java/br/edu/unex/sentinela/entity/Player.java` (Contém a lógica restritiva de checagem do AABB)
+- **Branch Histórica:** `feature/tilemap`
 
-## 🧠 Lógicas de Inteligência Artificial (Atuais)
-- **Matriz de Navegabilidade:** Um mundo estruturado em blocos de 40x40 pixels, com diferentes "Custos de Movimento" (Ex: Lama custa mais caro que Asfalto limpo).
-- **Algoritmo A* (A-Star):** O Inimigo (*Quadrado Vermelho*) possui uma lógica autônoma que busca o caminho mais curto e eficiente até o jogador (*Quadrado Azul*). Ele recalcula a rota apenas a cada 0.5 segundos para poupar memória, desviando inteligentemente das paredes e priorizando caminhos com menor "custo".
-- **Ferramentas de Debug Visual:** O motor desenha pequenos pontos amarelos na tela simulando os *nós (nodes)* em tempo real nos quais o inimigo pretende pisar, para comprovação e debug do comportamento do A*.
+### 4. Navegação Autônoma de Agentes com Algoritmo A* (A-Star)
+Aqui, implementamos o cérebro autônomo do Inimigo. Em vez de simplesmente andar em linha reta e prender a cara na parede, ele navega pelo labirinto escolhendo ativamente a rota mais rápida e barata.
+- **Como funciona:** O algoritmo avalia os vizinhos de cada bloco do mapa, calculando o "Custo Real (G)" mais o "Custo Estimado até o destino (H - Heurística de Manhattan)". Ele desvia de paredes pois elas têm custo infinito (intransitáveis), e pesa a decisão se vale a pena atravessar a Lama (mais lento) ou dar a volta pelo asfalto (mais longo). O inimigo repensa sua rota a cada 0.5s para não sobrecarregar o processador.
+- **Onde encontrar:**
+  - `src/main/java/br/edu/unex/sentinela/ai/Node.java` (Estrutura mental de avaliação de caminho)
+  - `src/main/java/br/edu/unex/sentinela/ai/AStarPathfinder.java` (O motor lógico do A*)
+  - `src/main/java/br/edu/unex/sentinela/entity/Enemy.java` (O agente Inimigo consumindo o A*)
+- **Ferramentas de Debug:** O `Renderer` (linha amarela tracejada) extrai a rota pretendida da mente do Inimigo e desenha bolinhas no chão para visualizarmos as intenções algorítmicas ao vivo!
+- **Branch Histórica:** `feature/astar`
 
 ---
 
