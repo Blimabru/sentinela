@@ -20,20 +20,37 @@
 
 ---
 
-## 🚀 Como Executar Localmente
+## 🚀 Como Executar o Jogo
 
-Você não precisa ter o Maven instalado globalmente, pois o projeto acompanha o **Maven Wrapper**.
+O projeto já inclui o **Maven Wrapper** embarcado, o que significa que você **não precisa instalar o Maven** no seu computador para rodar o jogo.
 
-1. Certifique-se de ter o **Java 17 (JDK)** ou superior instalado.
-2. Clone o repositório.
-3. Abra o terminal (PowerShell ou CMD) na pasta raiz do projeto.
-4. Execute o seguinte comando:
+### Pré-requisitos
+- Ter o **Java Development Kit (JDK) 17** (ou versão superior) instalado e configurado nas variáveis de ambiente (`JAVA_HOME`).
 
-```powershell
-.\mvnw.cmd clean javafx:run
-```
+### Passo a Passo
 
-Uma janela do JavaFX se abrirá renderizando o *Game Loop*, o mapa, o personagem e as lógicas de Inteligência Artificial implementadas.
+1. Faça o clone deste repositório em sua máquina:
+   ```bash
+   git clone <URL_DO_SEU_REPOSITORIO>
+   ```
+2. Pelo terminal (PowerShell, CMD ou Bash), navegue até a pasta raiz do projeto:
+   ```bash
+   cd sentinela
+   ```
+3. Execute o comando do Maven Wrapper correspondente ao seu sistema operacional:
+
+   **No Windows:**
+   ```powershell
+   .\mvnw.cmd clean javafx:run
+   ```
+
+   **No Linux ou macOS:**
+   ```bash
+   ./mvnw clean javafx:run
+   ```
+
+> [!NOTE]  
+> Ao rodar este comando pela primeira vez, o Maven Wrapper irá baixar automaticamente todas as dependências necessárias do JavaFX e compilar o código. Assim que finalizado, a janela do jogo se abrirá automaticamente!
 
 ---
 
