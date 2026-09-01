@@ -1,4 +1,4 @@
-package br.edu.unex.sentinela.world;
+package cloud.plataformatech.fadetoblack.world;
 
 /**
  * A classe Tile representa o bloco construtivo mais básico do mundo matemático do jogo.

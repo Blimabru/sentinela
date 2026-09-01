@@ -1,8 +1,8 @@
-package br.edu.unex.sentinela.entity;
+package cloud.plataformatech.fadetoblack.entity;
 
-import br.edu.unex.sentinela.ai.AStarPathfinder;
-import br.edu.unex.sentinela.ai.Node;
-import br.edu.unex.sentinela.world.TileMap;
+import cloud.plataformatech.fadetoblack.ai.AStarPathfinder;
+import cloud.plataformatech.fadetoblack.ai.Node;
+import cloud.plataformatech.fadetoblack.world.TileMap;
 
 import java.util.List;
 

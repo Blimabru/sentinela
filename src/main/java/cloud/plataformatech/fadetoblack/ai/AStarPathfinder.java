@@ -1,7 +1,7 @@
-package br.edu.unex.sentinela.ai;
+package cloud.plataformatech.fadetoblack.ai;
 
-import br.edu.unex.sentinela.world.Tile;
-import br.edu.unex.sentinela.world.TileMap;
+import cloud.plataformatech.fadetoblack.world.Tile;
+import cloud.plataformatech.fadetoblack.world.TileMap;
 
 import java.util.ArrayList;
 import java.util.Collections;

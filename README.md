@@ -67,27 +67,27 @@ A fase de planejamento onde a "alma" do jogo foi concebida. Definimos que seria 
 Nesta etapa, construímos o "motor" do jogo do zero. O Game Loop é um ciclo infinito que roda dezenas de vezes por segundo, responsável por duas coisas vitais: **Atualizar a Lógica (Física/Matemática)** e **Renderizar os Gráficos na Tela**. Desvinculamos a velocidade da física da velocidade da máquina usando a variável `deltaTime`.
 - **Como funciona:** O `AnimationTimer` do JavaFX pulsa o loop. A classe `GameWorld` propaga o `update()` para as entidades, enquanto o `Renderer` limpa e repinta o quadro.
 - **Onde encontrar:** 
-  - `src/main/java/br/edu/unex/sentinela/core/GameEngine.java` (O coração do Loop)
-  - `src/main/java/br/edu/unex/sentinela/input/InputManager.java` (Captura de teclado)
-  - `src/main/java/br/edu/unex/sentinela/rendering/Renderer.java` (Ilustrador de vídeo)
+  - `src/main/java/cloud/plataformatech/fadetoblack/core/GameEngine.java` (O coração do Loop)
+  - `src/main/java/cloud/plataformatech/fadetoblack/input/InputManager.java` (Captura de teclado)
+  - `src/main/java/cloud/plataformatech/fadetoblack/rendering/Renderer.java` (Ilustrador de vídeo)
 - **Branch Histórica:** `feature/gameloop`
 
 ### 3. Criação do TileMap e Colisões Físicas AABB
 A passagem do cenário imaginário para a estrutura de dados. Criamos o mapa usando uma **Matriz Bidimensional (Grid)**, onde cada "célula" (Tile) possui propriedades como Custo de Movimento e Permissão de Passagem (Walkable).
 - **Como funciona:** O Jogador possui uma caixa de colisão retangular (Bounding Box). Antes de permitir que ele mova seus pixels pela tela, o jogo checa os 4 cantos imaginários da caixa contra as células matriziais do `TileMap`. Se esbarrar em uma parede, o movimento é cancelado. Adicionamos também um bloco de "Lama" que reduz matematicamente a velocidade de travessia.
 - **Onde encontrar:**
-  - `src/main/java/br/edu/unex/sentinela/world/Tile.java` (A estrutura base do bloco de chão)
-  - `src/main/java/br/edu/unex/sentinela/world/TileMap.java` (A matriz geográfica instanciada)
-  - `src/main/java/br/edu/unex/sentinela/entity/Player.java` (Contém a lógica restritiva de checagem do AABB)
+  - `src/main/java/cloud/plataformatech/fadetoblack/world/Tile.java` (A estrutura base do bloco de chão)
+  - `src/main/java/cloud/plataformatech/fadetoblack/world/TileMap.java` (A matriz geográfica instanciada)
+  - `src/main/java/cloud/plataformatech/fadetoblack/entity/Player.java` (Contém a lógica restritiva de checagem do AABB)
 - **Branch Histórica:** `feature/tilemap`
 
 ### 4. Navegação Autônoma de Agentes com Algoritmo A* (A-Star)
 Aqui, implementamos o cérebro autônomo do Inimigo. Em vez de simplesmente andar em linha reta e prender a cara na parede, ele navega pelo labirinto escolhendo ativamente a rota mais rápida e barata.
 - **Como funciona:** O algoritmo avalia os vizinhos de cada bloco do mapa, calculando o "Custo Real (G)" mais o "Custo Estimado até o destino (H - Heurística de Manhattan)". Ele desvia de paredes pois elas têm custo infinito (intransitáveis), e pesa a decisão se vale a pena atravessar a Lama (mais lento) ou dar a volta pelo asfalto (mais longo). O inimigo repensa sua rota a cada 0.5s para não sobrecarregar o processador.
 - **Onde encontrar:**
-  - `src/main/java/br/edu/unex/sentinela/ai/Node.java` (Estrutura mental de avaliação de caminho)
-  - `src/main/java/br/edu/unex/sentinela/ai/AStarPathfinder.java` (O motor lógico do A*)
-  - `src/main/java/br/edu/unex/sentinela/entity/Enemy.java` (O agente Inimigo consumindo o A*)
+  - `src/main/java/cloud/plataformatech/fadetoblack/ai/Node.java` (Estrutura mental de avaliação de caminho)
+  - `src/main/java/cloud/plataformatech/fadetoblack/ai/AStarPathfinder.java` (O motor lógico do A*)
+  - `src/main/java/cloud/plataformatech/fadetoblack/entity/Enemy.java` (O agente Inimigo consumindo o A*)
 - **Ferramentas de Debug:** O `Renderer` (linha amarela tracejada) extrai a rota pretendida da mente do Inimigo e desenha bolinhas no chão para visualizarmos as intenções algorítmicas ao vivo!
 - **Branch Histórica:** `feature/astar`
 

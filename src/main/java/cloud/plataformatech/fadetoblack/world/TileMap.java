@@ -1,4 +1,4 @@
-package br.edu.unex.sentinela.world;
+package cloud.plataformatech.fadetoblack.world;
 
 /**
  * A classe TileMap orquestra a grade espacial invisível que forma a "planta baixa" da fase do jogo.

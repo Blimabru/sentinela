@@ -1,8 +1,8 @@
-package br.edu.unex.sentinela.core;
+package cloud.plataformatech.fadetoblack.core;
 
-import br.edu.unex.sentinela.input.InputManager;
-import br.edu.unex.sentinela.rendering.Renderer;
-import br.edu.unex.sentinela.world.GameWorld;
+import cloud.plataformatech.fadetoblack.input.InputManager;
+import cloud.plataformatech.fadetoblack.rendering.Renderer;
+import cloud.plataformatech.fadetoblack.world.GameWorld;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;

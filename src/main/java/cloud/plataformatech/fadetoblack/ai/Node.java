@@ -1,4 +1,4 @@
-package br.edu.unex.sentinela.ai;
+package cloud.plataformatech.fadetoblack.ai;
 
 /**
  * A classe Node representa uma célula individual do mapa durante o processo de "raciocínio" do algoritmo A*.
