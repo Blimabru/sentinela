@@ -54,6 +54,71 @@ O projeto já inclui o **Maven Wrapper** embarcado, o que significa que você **
 
 ---
 
+## 🏗️ Arquitetura e Interação entre Classes
+
+O diagrama abaixo ilustra como os principais arquivos (classes) do jogo interagem entre si, demonstrando as dependências e o fluxo de dados do sistema:
+
+```mermaid
+classDiagram
+    direction TB
+
+    %% Pacote app
+    class GameApplication
+
+    %% Pacote core
+    class GameEngine
+
+    %% Pacote world
+    class GameWorld
+    class TileMap
+    class Tile
+
+    %% Pacote entity
+    class Player
+    class Enemy
+
+    %% Pacote input
+    class InputManager
+
+    %% Pacote rendering
+    class Renderer
+
+    %% Pacote ai
+    class AStarPathfinder
+    class Node
+
+    %% Relacionamentos
+    GameApplication --> GameEngine : inicia
+    
+    GameEngine --> InputManager : gerencia entrada
+    GameEngine --> Renderer : processa gráficos
+    GameEngine --> GameWorld : atualiza estado
+    
+    GameWorld --> Player : contém
+    GameWorld --> Enemy : contém
+    GameWorld --> InputManager : repassa inputs
+    
+    Player --> InputManager : consome comandos
+    Player --> TileMap : checa colisões físicas
+    Player --> Tile : analisa terreno
+    
+    Enemy --> AStarPathfinder : requisita rotas A*
+    Enemy --> Node : armazena caminho
+    Enemy --> TileMap : reconhece obstáculos
+    
+    Renderer --> Player : desenha jogador
+    Renderer --> Enemy : desenha monstro
+    Renderer --> GameWorld : desenha UI/mundo
+    Renderer --> TileMap : desenha grid
+    Renderer --> Tile : renderiza sprites
+    Renderer --> Node : renderiza debug da IA
+    
+    AStarPathfinder --> Tile : avalia heurística
+    AStarPathfinder --> TileMap : busca vizinhos
+```
+
+---
+
 ## 🗺️ Entregas e Fases do Desenvolvimento
 
 O desenvolvimento deste repositório acompanhou os módulos práticos da disciplina. Abaixo você encontra a explicação conceitual de cada entrega e onde encontrar o código-fonte correspondente.
