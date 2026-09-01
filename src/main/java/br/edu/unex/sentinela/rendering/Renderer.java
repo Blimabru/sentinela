@@ -2,12 +2,16 @@ package br.edu.unex.sentinela.rendering;
 
 import br.edu.unex.sentinela.app.GameApplication;
 import br.edu.unex.sentinela.entity.Player;
+import br.edu.unex.sentinela.entity.Enemy;
 import br.edu.unex.sentinela.world.GameWorld;
 import br.edu.unex.sentinela.world.TileMap;
 import br.edu.unex.sentinela.world.Tile;
+import br.edu.unex.sentinela.ai.Node;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+
+import java.util.List;
 
 /**
  * A classe "Renderer" atua como a placa de vídeo ou o ilustrador digital do projeto.
@@ -45,8 +49,9 @@ public class Renderer {
         // Fase 2: Pinta a topografia geométrica mapeada pela classe TileMap (o piso por onde o ator caminhará).
         drawTileMap(world.getTileMap());
 
-        // Fase 3: Inspeciona o estado matemático atual da entidade "Player" e a desenha por cima de tudo.
+        // Fase 3: Inspeciona o estado matemático atual das entidades e as desenha.
         drawPlayer(world.getPlayer());
+        drawEnemy(world.getEnemy());
 
         // Fase 4: Sobrepõe textos informativos para acompanhamento e verificação do funcionamento interno.
         drawDebugInfo(deltaTime);
@@ -94,6 +99,30 @@ public class Renderer {
         
         // Pinta um retângulo na exata coordenada espacial baseada nas dimensões da caixa de colisão do ator.
         gc.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+    }
+
+    /**
+     * Extrai a lógica autônoma e revela a posição do Inimigo, assim como a trilha mental 
+     * (algoritmo A*) que ele está planejando usar para chegar até o jogador.
+     * 
+     * @param enemy O vilão.
+     */
+    private void drawEnemy(Enemy enemy) {
+        // Primeiro, desenha a linha guia da Rota (Recurso de Debug visual exigido na aula)
+        List<Node> path = enemy.getCurrentPath();
+        if (path != null && !path.isEmpty()) {
+            gc.setFill(Color.YELLOW);
+            for (Node node : path) {
+                // Desenha bolinhas amarelas no centro de cada bloco que o inimigo planeja pisar.
+                double centerX = (node.getCol() * TileMap.TILE_SIZE) + (TileMap.TILE_SIZE / 2.0) - 4;
+                double centerY = (node.getRow() * TileMap.TILE_SIZE) + (TileMap.TILE_SIZE / 2.0) - 4;
+                gc.fillOval(centerX, centerY, 8, 8);
+            }
+        }
+
+        // Depois, desenha o inimigo em si (Um quadrado vermelho).
+        gc.setFill(Color.RED);
+        gc.fillRect(enemy.getX(), enemy.getY(), enemy.getWidth(), enemy.getHeight());
     }
 
     /**
