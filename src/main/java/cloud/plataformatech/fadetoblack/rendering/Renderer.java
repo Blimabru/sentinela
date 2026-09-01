@@ -1,10 +1,10 @@
-package br.edu.unex.sentinela.rendering;
+package cloud.plataformatech.fadetoblack.rendering;
 
-import br.edu.unex.sentinela.app.GameApplication;
-import br.edu.unex.sentinela.entity.Player;
-import br.edu.unex.sentinela.world.GameWorld;
-import br.edu.unex.sentinela.world.TileMap;
-import br.edu.unex.sentinela.world.Tile;
+import cloud.plataformatech.fadetoblack.app.GameApplication;
+import cloud.plataformatech.fadetoblack.entity.Player;
+import cloud.plataformatech.fadetoblack.world.GameWorld;
+import cloud.plataformatech.fadetoblack.world.TileMap;
+import cloud.plataformatech.fadetoblack.world.Tile;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
