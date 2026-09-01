@@ -1,0 +1,20 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.eclipse
+
+# OS files
+.DS_Store
+Thumbs.db
