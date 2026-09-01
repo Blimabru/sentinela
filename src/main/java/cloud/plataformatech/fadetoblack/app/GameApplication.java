@@ -1,6 +1,6 @@
-package br.edu.unex.sentinela.app;
+package cloud.plataformatech.fadetoblack.app;
 
-import br.edu.unex.sentinela.core.GameEngine;
+import cloud.plataformatech.fadetoblack.core.GameEngine;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;

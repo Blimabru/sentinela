@@ -1,8 +1,8 @@
-package br.edu.unex.sentinela.world;
+package cloud.plataformatech.fadetoblack.world;
 
-import br.edu.unex.sentinela.entity.Player;
-import br.edu.unex.sentinela.input.InputManager;
-import br.edu.unex.sentinela.app.GameApplication;
+import cloud.plataformatech.fadetoblack.entity.Player;
+import cloud.plataformatech.fadetoblack.input.InputManager;
+import cloud.plataformatech.fadetoblack.app.GameApplication;
 
 /**
  * Esta classe funciona como a grande "caixa" invisível do universo do jogo. 

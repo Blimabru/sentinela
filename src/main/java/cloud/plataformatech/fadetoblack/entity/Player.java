@@ -1,6 +1,6 @@
-package br.edu.unex.sentinela.entity;
+package cloud.plataformatech.fadetoblack.entity;
 
-import br.edu.unex.sentinela.input.InputManager;
+import cloud.plataformatech.fadetoblack.input.InputManager;
 import javafx.scene.input.KeyCode;
 
 /**
