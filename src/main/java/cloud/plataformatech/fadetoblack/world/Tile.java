@@ -1,55 +1,95 @@
 package cloud.plataformatech.fadetoblack.world;
 
 /**
- * A classe Tile representa o bloco construtivo mais básico do mundo matemático do jogo.
- * Como cada "ladrilho" em um tabuleiro, o Tile armazena propriedades físicas que dirão
- * ao motor de física se aquele espaço é livre para andar, ou qual o custo de atravessá-lo.
+ * Representa uma célula atômica da grade bidimensional do mapa.
+ * Encapsula as propriedades geográficas do terreno estático e permite
+ * sobreposições dinâmicas (como portões fechados ou pontes estendidas).
  */
 public class Tile {
-    
-    // Indica se entidades como o jogador e inimigos podem passar por cima deste bloco.
-    private final boolean walkable;
-    
-    // Representa o "peso" ou "esforço" necessário para andar sobre este bloco.
-    // Usado em algoritmos de inteligência artificial (como o A*) para decidir rotas.
-    private final int movementCost;
-    
-    // Identificador categórico numérico usado principalmente para definir a aparência.
-    // 0 = Chão de Grama (Livre), 1 = Parede de Pedra (Bloqueado), 2 = Lama (Livre, mas com penalidade de velocidade).
-    private final int type;
+
+    private final int col;
+    private final int row;
+    private TerrainType baseType;
+    private TerrainType dynamicOverride;
 
     /**
-     * Construtor do bloco do mapa. Ao criar um novo espaço no tabuleiro, devemos 
-     * assinalar imediatamente qual a natureza física dele.
-     * 
-     * @param type Código numérico que define que tipo de terreno é este.
-     * @param walkable Define se os atores do jogo podem invadir este espaço.
-     * @param movementCost Valor numérico para o custo de movimentação (1 para normal, 2 ou mais para terrenos difíceis).
+     * Construtor completo com TerrainType tipado.
+     */
+    public Tile(int col, int row, TerrainType baseType) {
+        this.col = col;
+        this.row = row;
+        this.baseType = baseType;
+        this.dynamicOverride = null;
+    }
+
+    /**
+     * Construtor legado com código numérico para retrocompatibilidade.
+     * 0 = Pedra / Grama, 1 = Parede, 2 = Lama.
      */
     public Tile(int type, boolean walkable, int movementCost) {
-        this.type = type;
-        this.walkable = walkable;
-        this.movementCost = movementCost;
+        this.col = 0;
+        this.row = 0;
+        if (type == 1 || !walkable) {
+            this.baseType = TerrainType.WALL;
+        } else if (type == 2) {
+            this.baseType = TerrainType.MUD;
+        } else {
+            this.baseType = TerrainType.STONE_FLOOR;
+        }
     }
 
-    /**
-     * @return Retorna a permissão de passagem deste bloco. Verdadeiro se for transitável.
-     */
+    public TerrainType getEffectiveType() {
+        return dynamicOverride != null ? dynamicOverride : baseType;
+    }
+
     public boolean isWalkable() {
-        return walkable;
+        return getEffectiveType().isWalkable();
     }
 
-    /**
-     * @return Retorna a penalidade de travessia estipulada para este terreno.
-     */
     public int getMovementCost() {
-        return movementCost;
+        return getEffectiveType().getMovementCost();
     }
 
-    /**
-     * @return Retorna a identificação numérica estrutural do terreno para fins de renderização.
-     */
+    public double getSpeedMultiplier() {
+        return getEffectiveType().getSpeedMultiplier();
+    }
+
     public int getType() {
-        return type;
+        TerrainType current = getEffectiveType();
+        if (!current.isWalkable()) return 1;
+        if (current == TerrainType.MUD) return 2;
+        if (current == TerrainType.TAR) return 3;
+        if (current == TerrainType.ICE) return 4;
+        if (current == TerrainType.DEEP_SNOW) return 5;
+        if (current == TerrainType.PORTAL) return 6;
+        return 0;
+    }
+
+    public int getCol() {
+        return col;
+    }
+
+    public int getRow() {
+        return row;
+    }
+
+    public TerrainType getBaseType() {
+        return baseType;
+    }
+
+    public void setBaseType(TerrainType baseType) {
+        this.baseType = baseType;
+    }
+
+    public void setDynamicOverride(TerrainType dynamicOverride) {
+        this.dynamicOverride = dynamicOverride;
+    }
+
+    public void clearDynamicOverride() {
+        this.dynamicOverride = null;
+    }
+
+    public boolean hasDynamicOverride() {
+        return dynamicOverride != null;
     }
 }
