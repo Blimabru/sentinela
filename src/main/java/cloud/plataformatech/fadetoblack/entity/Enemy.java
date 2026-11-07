@@ -2,116 +2,245 @@ package cloud.plataformatech.fadetoblack.entity;
 
 import cloud.plataformatech.fadetoblack.ai.AStarPathfinder;
 import cloud.plataformatech.fadetoblack.ai.Node;
+import cloud.plataformatech.fadetoblack.world.Tile;
 import cloud.plataformatech.fadetoblack.world.TileMap;
 
 import java.util.List;
 
 /**
- * A classe Enemy (Inimigo) implementa um ator autônomo. Ao contrário do Player, que é escravo
- * do teclado, o Inimigo depende do Pathfinder A* para "enxergar" e calcular suas próprias rotas 
- * de perseguição de forma ativa.
+ * Entidade de Inteligência Artificial autônoma.
+ * Cada inimigo utiliza sua própria instância do algoritmo A* parametrizada
+ * com base em seu arquétipo (Demônio, Morcego ou Espírito).
+ * Mantém telemetria em tempo real das métricas do algoritmo para exibição no HUD overhead.
  */
 public class Enemy {
-    
-    // Coordenadas absolutas de renderização.
+
+    private final EnemyArchetype archetype;
     private double x;
     private double y;
-
-    // Velocidade de perseguição (pixels por segundo).
-    private final double speed = 100.0;
-    
-    // Dimensões do quadrado.
     private final double width = 32.0;
     private final double height = 32.0;
 
-    // O "Cérebro" que calcula as trilhas, recebendo o mapa estático.
+    private final TileMap tileMap;
     private final AStarPathfinder pathfinder;
-    
-    // O diário de bordo interno do inimigo contendo os passos precisos até chegar no alvo.
     private List<Node> currentPath;
-    
-    // Mecanismo de estamina intelectual: O agente recalcula a rota apenas a cada 0.5 segundos,
-    // em vez de 60 vezes por segundo, economizando poder massivo de processamento do computador.
-    private double pathCalculationTimer = 0.0;
-    private final double PATH_RECALCULATION_DELAY = 0.5;
 
-    /**
-     * O Construtor posiciona o nêmesis no mapa e acopla um "Cérebro" virgem a ele.
-     */
+    private double pathCalculationTimer = 0.0;
+    private double animationTimer = 0.0;
+
+    // --- Métricas de Telemetria e Diagnóstico da IA ---
+    private String aiState = "INICIANDO";
+    private double currentSpeed = 0.0;
+    private double currentSlowPercent = 0.0;
+    private String currentTerrainName = "Pedra";
+    private int currentTerrainCost = 1;
+    private double astarLatencyMs = 0.0;
+    private int nodesExplored = 0;
+    private int pathCost = 0;
+    private int heuristicDistance = 0;
+
     public Enemy(double startX, double startY, TileMap tileMap) {
+        this(EnemyArchetype.DEMON, startX, startY, tileMap);
+    }
+
+    public Enemy(EnemyArchetype archetype, double startX, double startY, TileMap tileMap) {
+        this.archetype = archetype;
         this.x = startX;
         this.y = startY;
+        this.tileMap = tileMap;
         this.pathfinder = new AStarPathfinder(tileMap);
+        this.currentSpeed = archetype.getBaseSpeed();
+        this.pathCalculationTimer = archetype.getRecalculationDelay(); // Dispara cálculo inicial imediatamente
     }
 
     /**
-     * Ciclo vital do Inimigo. Pensa, traça rota e persegue.
-     * 
-     * @param deltaTime Fração de tempo.
-     * @param targetX Coordenada do jogador (Alvo).
-     * @param targetY Coordenada do jogador (Alvo).
+     * Atualiza o ciclo vital da IA: avalia ambiente, executa busca heurística e desloca o agente.
      */
     public void update(double deltaTime, double targetX, double targetY) {
-        // Incrementa o relógio interno...
+        animationTimer += deltaTime * 5.0;
         pathCalculationTimer += deltaTime;
 
-        // Caso o timer estoure o limite de meio segundo, ordena o "cérebro" a calcular um novo trajeto.
-        if (pathCalculationTimer >= PATH_RECALCULATION_DELAY) {
-            pathCalculationTimer = 0; // Reseta o relógio
-            
-            // Converte a própria posição bruta (pixels) para o formato compreendido pela IA (Índice da Grade).
-            int startCol = (int) ((this.x + width / 2) / TileMap.TILE_SIZE);
-            int startRow = (int) ((this.y + height / 2) / TileMap.TILE_SIZE);
-            
-            // Converte a posição do inimigo jurado (jogador) para o mesmo formato de matriz.
-            int endCol = (int) ((targetX + width / 2) / TileMap.TILE_SIZE);
-            int endRow = (int) ((targetY + height / 2) / TileMap.TILE_SIZE);
-            
-            // Requisita a solução matemática ao Módulo A*
-            currentPath = pathfinder.findPath(startCol, startRow, endCol, endRow);
+        // Identifica o tile atual sob os pés do agente
+        int currentTileCol = (int) ((this.x + width / 2.0) / TileMap.TILE_SIZE);
+        int currentTileRow = (int) ((this.y + height / 2.0) / TileMap.TILE_SIZE);
+        Tile currentTile = tileMap.getTile(currentTileCol, currentTileRow);
+
+        // Fator de velocidade ajustado pelo terreno e biologia do arquétipo
+        double terrainSpeedFactor = archetype.calculateSpeedFactor(currentTile);
+        this.currentTerrainName = currentTile.getEffectiveType().getDisplayName();
+        this.currentTerrainCost = archetype.modifyTerrainCost(currentTile);
+        this.currentSlowPercent = (1.0 - terrainSpeedFactor) * 100.0;
+
+        // Comportamento comportamental de arquétipo
+        double effectiveBaseSpeed = archetype.getBaseSpeed();
+        double distToPlayer = Math.hypot((targetX - this.x), (targetY - this.y));
+
+        if (archetype == EnemyArchetype.DEMON) {
+            // Demônio entra em fúria ao se aproximar (< 160 px), acelerando +30%
+            if (distToPlayer < 160.0) {
+                effectiveBaseSpeed *= 1.30;
+                this.aiState = "FÚRIA MELEE";
+            } else {
+                this.aiState = "PERSEGUINDO";
+            }
+        } else if (archetype == EnemyArchetype.BAT) {
+            this.aiState = "ECO-CAÇADA";
+        } else if (archetype == EnemyArchetype.GHOST) {
+            this.aiState = "FLUTUANDO";
         }
 
-        // --- Movimentação Motora (Seguindo a Trilha) ---
-        if (currentPath != null && !currentPath.isEmpty()) {
-            
-            // Foca os olhos estritamente no primeiro passo imediato exigido pela lista
-            Node nextStep = currentPath.get(0);
-            
-            // Converte esse nó imaginário da mente de volta para as coordenadas brutas na tela real
-            double targetPixelX = (nextStep.getCol() * TileMap.TILE_SIZE) + (TileMap.TILE_SIZE - width) / 2.0;
-            double targetPixelY = (nextStep.getRow() * TileMap.TILE_SIZE) + (TileMap.TILE_SIZE - height) / 2.0;
-            
-            // Calcula o vetor direcional e a hipotenusa até o alvo
-            double dx = targetPixelX - this.x;
-            double dy = targetPixelY - this.y;
-            double distance = Math.sqrt(dx * dx + dy * dy);
+        this.currentSpeed = effectiveBaseSpeed * terrainSpeedFactor;
 
-            // Se o agente ainda não pisou no centro do bloco exigido...
-            if (distance > 2.0) {
-                // Normaliza o vetor (transfere a força total de 1 para ser multiplicada pela velocidade real).
-                this.x += (dx / distance) * speed * deltaTime;
-                this.y += (dy / distance) * speed * deltaTime;
-            } else {
-                // O Agente pisou firmemente na "migalha de pão". Arrancamos ela da lista e partimos para a próxima!
-                currentPath.remove(0);
+        // Verifica se a rota atual foi subitamente interrompida por um portão fechado ou ponte erguida
+        if (isCurrentPathBlocked()) {
+            recalculatePath(targetX, targetY);
+        } else if (pathCalculationTimer >= archetype.getRecalculationDelay()) {
+            recalculatePath(targetX, targetY);
+        }
+
+        // --- Execução Motora do Caminho (Waypoints) ---
+        followPath(deltaTime);
+    }
+
+    /**
+     * Força a execução do algoritmo A* e extrai telemetria de desempenho.
+     */
+    public void recalculatePath(double targetX, double targetY) {
+        pathCalculationTimer = 0.0;
+
+        int startCol = (int) ((this.x + width / 2.0) / TileMap.TILE_SIZE);
+        int startRow = (int) ((this.y + height / 2.0) / TileMap.TILE_SIZE);
+
+        int targetCol = (int) ((targetX + width / 2.0) / TileMap.TILE_SIZE);
+        int targetRow = (int) ((targetY + height / 2.0) / TileMap.TILE_SIZE);
+
+        // Invoca o A* fornecendo o modificador biológico deste arquétipo
+        currentPath = pathfinder.findPath(startCol, startRow, targetCol, targetRow,
+                tile -> archetype.modifyTerrainCost(tile));
+
+        // Captura métricas do A* para exibição analítica
+        this.astarLatencyMs = pathfinder.getLastCalculationTimeMs();
+        this.nodesExplored = pathfinder.getNodesExplored();
+        this.pathCost = pathfinder.getLastPathCost();
+        this.heuristicDistance = pathfinder.getLastInitialHCost();
+    }
+
+    /**
+     * Detecta se algum dos próximos nós planejados tornou-se intransponível (ex: porta bateu na frente).
+     */
+    private boolean isCurrentPathBlocked() {
+        if (currentPath == null || currentPath.isEmpty()) return false;
+        // Inspeciona os próximos 3 passos da rota
+        int lookahead = Math.min(3, currentPath.size());
+        for (int i = 0; i < lookahead; i++) {
+            Node node = currentPath.get(i);
+            Tile t = tileMap.getTile(node.getCol(), node.getRow());
+            if (!t.isWalkable()) {
+                return true;
             }
+        }
+        return false;
+    }
+
+    /**
+     * Segue a sequência de nós calculada pelo A*.
+     */
+    private void followPath(double deltaTime) {
+        if (currentPath == null || currentPath.isEmpty()) {
+            return;
+        }
+
+        Node nextStep = currentPath.get(0);
+        double targetPixelX = (nextStep.getCol() * TileMap.TILE_SIZE) + (TileMap.TILE_SIZE - width) / 2.0;
+        double targetPixelY = (nextStep.getRow() * TileMap.TILE_SIZE) + (TileMap.TILE_SIZE - height) / 2.0;
+
+        double dx = targetPixelX - this.x;
+        double dy = targetPixelY - this.y;
+        double distance = Math.hypot(dx, dy);
+
+        if (distance > 3.0) {
+            this.x += (dx / distance) * currentSpeed * deltaTime;
+            this.y += (dy / distance) * currentSpeed * deltaTime;
+        } else {
+            // Atingiu o nó: consome o waypoint e avança para o próximo
+            currentPath.remove(0);
         }
     }
 
-    // --- Métodos de Leitura Analítica ---
-    
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getWidth() { return width; }
-    public double getHeight() { return height; }
-    
-    /**
-     * O motor de vídeo consumirá esta informação bruta para desenhar no chão
-     * as intenções do algoritmo e comprovar, visualmente, a inteligência da busca em grafos.
-     * 
-     * @return A lista residual da rota atual traçada na imaginação do Agente.
-     */
+    public void setPosition(double newX, double newY) {
+        this.x = newX;
+        this.y = newY;
+        this.currentPath = null;
+        this.pathCalculationTimer = archetype.getRecalculationDelay();
+    }
+
+    // --- Getters de Renderização e Métricas ---
+
+    public EnemyArchetype getArchetype() {
+        return archetype;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getWidth() {
+        return width;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
     public List<Node> getCurrentPath() {
         return currentPath;
+    }
+
+    public String getAiState() {
+        return aiState;
+    }
+
+    public double getCurrentSpeed() {
+        return currentSpeed;
+    }
+
+    public double getCurrentSlowPercent() {
+        return currentSlowPercent;
+    }
+
+    public String getCurrentTerrainName() {
+        return currentTerrainName;
+    }
+
+    public int getCurrentTerrainCost() {
+        return currentTerrainCost;
+    }
+
+    public double getAstarLatencyMs() {
+        return astarLatencyMs;
+    }
+
+    public int getNodesExplored() {
+        return nodesExplored;
+    }
+
+    public int getPathCost() {
+        return pathCost;
+    }
+
+    public int getHeuristicDistance() {
+        return heuristicDistance;
+    }
+
+    public int getStepsRemaining() {
+        return currentPath != null ? currentPath.size() : 0;
+    }
+
+    public double getAnimationTimer() {
+        return animationTimer;
     }
 }
