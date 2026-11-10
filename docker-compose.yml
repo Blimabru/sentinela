@@ -10,11 +10,15 @@ services:
   fade-to-black-game:
     # ── 1. Construção, Imagem e Ciclo de Vida ──────────────────────────────────
 
-    # Instrui o Docker Compose a compilar a imagem localmente a partir do
-    # Dockerfile presente na raiz do repositório (Multi-stage Build).
+    # Instrui o Docker Compose a compilar a imagem automaticamente a partir do
+    # Dockerfile presente no diretório especificado pela variável 'APP_VOLUME'.
+    # REQUISITO PARA PORTAINER WEB EDITOR: O contêiner do próprio Portainer
+    # deve possuir o volume '/srv/stacks:/srv/stacks' montado para conseguir ler
+    # o Dockerfile e enviar o contexto de build ao Docker Daemon.
     build:
-      # Define o diretório raiz do projeto como contexto de envio para o daemon Docker.
-      context: .
+      # Define o diretório raiz do código-fonte no servidor via 'APP_VOLUME'
+      # (padrão: /srv/stacks/fade-to-black) como contexto de build.
+      context: ${APP_VOLUME:-/srv/stacks/fade-to-black}
       # Especifica o arquivo de definição das etapas de compilação e execução.
       dockerfile: Dockerfile
 
