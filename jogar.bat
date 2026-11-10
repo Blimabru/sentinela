@@ -6,12 +6,12 @@ echo         PROJECT FADE TO BLACK - ARPG 2D & IA
 echo ========================================================
 echo.
 
-set JAR_FILE=sentinela.jar
+set JAR_FILE=fade-to-black.jar
 if not exist "%JAR_FILE%" (
-    if exist "target\sentinela.jar" (
-        set JAR_FILE=target\sentinela.jar
+    if exist "target\fade-to-black.jar" (
+        set JAR_FILE=target\fade-to-black.jar
     ) else (
-        echo [!] O executavel sentinela.jar nao foi encontrado.
+        echo [!] O executavel fade-to-black.jar nao foi encontrado.
         echo [*] Compilando e gerando o pacote standalone...
         call .\mvnw.cmd package -DskipTests
         if errorlevel 1 (
@@ -19,7 +19,7 @@ if not exist "%JAR_FILE%" (
             pause
             exit /b 1
         )
-        set JAR_FILE=target\sentinela.jar
+        set JAR_FILE=target\fade-to-black.jar
     )
 )
 
