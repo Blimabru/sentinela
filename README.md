@@ -457,11 +457,11 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
        ports:
          - "${HOST_IP:-10.100.2.101}:${HOST_PORT:-18088}:8080"
        environment:
-         - DISPLAY_WIDTH=${DISPLAY_WIDTH:-800}
-         - DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-600}
-         - TZ=${TZ:-America/Bahia}
+         - DISPLAY_WIDTH=800
+         - DISPLAY_HEIGHT=600
+         - TZ=America/Bahia
        volumes:
-         - "${STACK_PATH:-/srv/stacks/fade-to-black}/screenshots:/app/docs/screenshots"
+         - "${APP_VOLUME:-/srv/stacks/fade-to-black}/screenshots:/app/docs/screenshots"
        healthcheck:
          test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/fade-to-black.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
          interval: 15s
@@ -496,25 +496,19 @@ docker compose up -d --build
 
 #### 📋 Variáveis de Ambiente para Configurar no Portainer
 
-Na tela de criação/edição da Stack no Portainer, role até **Environment variables** e cadastre as variáveis abaixo (todas possuem valores padrão de *fallback* definidos via `:-`, tornando o preenchimento flexível):
+Na tela de criação/edição da Stack no Portainer, role até **Environment variables** e cadastre as variáveis abaixo (os parâmetros `DISPLAY_WIDTH=800`, `DISPLAY_HEIGHT=600` e `TZ=America/Bahia` já ficam definidos de forma fixa diretamente no Compose):
 
 | Variável | Valor Padrão | Exemplo | Descrição Técnica |
 | :--- | :--- | :--- | :--- |
 | **`HOST_IP`** | `10.100.2.101` | `10.100.2.101` | Endereço IP privado da interface de rede da VM Docker onde a porta será vinculada. Use `0.0.0.0` caso deseje escutar em todas as interfaces. |
 | **`HOST_PORT`** | `18088` | `18088` | Porta TCP exposta no servidor host e consumida pelo Proxy Reverso (NGINX UI). |
-| **`STACK_PATH`** | `/srv/stacks/fade-to-black` | `/srv/stacks/fade-to-black` | Pasta raiz da stack no servidor host onde será gravada a subpasta persistente `screenshots/` (capturas da tecla `F12`). |
-| **`DISPLAY_WIDTH`** | `800` | `800` | Largura em pixels do servidor gráfico virtual Xvfb (deve acompanhar a resolução do Canvas). |
-| **`DISPLAY_HEIGHT`** | `600` | `600` | Altura em pixels do servidor gráfico virtual Xvfb. |
-| **`TZ`** | `America/Bahia` | `America/Bahia` | Fuso horário padrão do sistema operacional interno do contêiner para registros e timestamps. |
+| **`APP_VOLUME`** | `/srv/stacks/fade-to-black` | `/srv/stacks/fade-to-black` | Diretório base da stack no servidor host onde será mantida a subpasta persistente `screenshots/` (capturas da tecla `F12`). |
 
-> **Dica (Colagem Rápida no Portainer):** Clique em **Advanced mode** dentro da seção *Environment variables* do Portainer e cole diretamente o bloco abaixo ajustando os seus valores:
+> **Dica (Colagem Rápida no Portainer / `.env`):** Clique em **Advanced mode** dentro da seção *Environment variables* do Portainer (ou salve em um arquivo `.env` local) e cole o bloco abaixo ajustando os seus valores:
 > ```env
 > HOST_IP=10.100.2.101
 > HOST_PORT=18088
-> STACK_PATH=/srv/stacks/fade-to-black
-> DISPLAY_WIDTH=800
-> DISPLAY_HEIGHT=600
-> TZ=America/Bahia
+> APP_VOLUME=/srv/stacks/fade-to-black
 > ```
 
 ---
