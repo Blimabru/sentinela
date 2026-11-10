@@ -31,13 +31,13 @@ services:
 
     # ── 2. Exposição de Rede e Integração com Proxy Reverso ──────────────────
     ports:
-      # Formato [Porta_Host]:[Porta_Contêiner]
+      # Formato [IP_do_Host]:[Porta_do_Host]:[Porta_Contêiner]
       # Publica a interface HTTP/WebSocket do noVNC (porta interna 8080) na
-      # porta externa 8088 do servidor host para consumo pelo NGINX UI.
-      # NOTA DE SEGURANÇA: Caso o NGINX UI opere em uma máquina virtual dedicada
-      # na rede privada, recomenda-se restringir o vínculo ao IP interno do host
-      # Docker (ex.: "10.100.2.101:8088:8080") para bloquear acessos diretos externos.
-      - "10.100.2.101:8088:8080"
+      # porta externa incomum 18088 do servidor host para consumo pelo NGINX UI.
+      # NOTA DE SEGURANÇA: O vínculo explícito ao IP privado do host Docker
+      # ("10.100.2.101:18088:8080") restringe a escuta à rede interna, impedindo
+      # que scanners ou requisições externas diretas alcancem o contêiner.
+      - "10.100.2.101:18088:8080"
 
     # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
     environment:
