@@ -434,23 +434,25 @@ flowchart LR
 
 Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Build*), a compilação precisa ter acesso ao código-fonte e ao `pom.xml`. Há três maneiras recomendadas de realizar o deploy no **Portainer**:
 
-#### Opção A: Padrão `/srv/stacks` + Build Local + Web Editor (Recomendado para Servidores Organizados)
-> **Por que não usar `build:` direto no Web Editor?**  
-> O Portainer *Web Editor* salva o YAML dentro de seu próprio volume interno (`portainer_data`), onde o código-fonte não existe. Gerar a imagem primeiro na pasta física `/srv/stacks/fade-to-black` permite manter todos os arquivos organizados no servidor e gerenciar o contêiner integralmente pelo Portainer apenas referenciando a imagem compilada (`image: fade-to-black-game:latest`).
+#### Opção A: Padrão `/srv/stacks` + Build Automático pelo Web Editor do Portainer (Recomendado)
+> **Pré-requisito único no Portainer:**  
+> Para que o **Web Editor** do Portainer enxergue o `Dockerfile` e compile automaticamente a partir da sua pasta física, o contêiner do próprio **Portainer** deve possuir o mapeamento de volume **`/srv/stacks:/srv/stacks`** configurado em sua inicialização.
 
-1. **No servidor Docker, clone o projeto e compile a imagem local:**
+1. **No servidor Docker, clone o repositório para a pasta da stack:**
    ```bash
-   git clone https://github.com/Blimabru/sentinela.git /srv/stacks/fade-to-black
-   cd /srv/stacks/fade-to-black
-   docker build -t fade-to-black-game:latest .
+   cd /srv/stacks
+   git clone https://github.com/Blimabru/sentinela.git fade-to-black
    ```
 
 2. **No Portainer (`Stacks` $\to$ `Add stack` $\to$ `Web editor`):**  
-   Cole a definição abaixo (sem o bloco `build:`, apontando para a imagem compilada no passo anterior e utilizando variáveis de ambiente do Portainer para IP, porta e caminho do volume):
+   Cole o conteúdo do [`docker-compose.yml`](docker-compose.yml) (já incluindo o bloco `build:` apontando para `${APP_VOLUME:-/srv/stacks/fade-to-black}`):
 
    ```yaml
    services:
      fade-to-black-game:
+       build:
+         context: ${APP_VOLUME:-/srv/stacks/fade-to-black}
+         dockerfile: Dockerfile
        image: fade-to-black-game:latest
        container_name: fade-to-black-game
        restart: unless-stopped
@@ -475,21 +477,21 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
            max-file: "3"
    ```
 
-3. **Cadastre as variáveis na seção *Environment variables* do Portainer** (veja a tabela completa abaixo) e clique em **Deploy the stack**.  
-   *(Para atualizar o jogo no futuro, basta executar `git pull && docker build -t fade-to-black-game:latest .` em `/srv/stacks/fade-to-black` e clicar em **Recreate** no contêiner pelo Portainer).*
+3. **Cadastre as variáveis na seção *Environment variables* do Portainer** (veja a tabela abaixo) e clique em **Deploy the stack**.  
+   *(Sempre que houver atualizações de código no GitHub, execute `git -C /srv/stacks/fade-to-black pull` e reconstrua a imagem via `docker compose build` ou recrie a stack no Portainer).*
 
-#### Opção B: Via Git Repository no Portainer (Automatizado)
+#### Opção B: Via Git Repository no Portainer (Sem Pasta Física Prévia)
 1. No Portainer, vá em **Stacks** $\to$ **Add stack**;
 2. Dê um nome à stack (ex: `fade-to-black`) e selecione o método **Repository**;
 3. Insira a URL `https://github.com/Blimabru/sentinela.git` e selecione a branch `main`;
-4. Em **Compose path**, mantenha `docker-compose.yml`;
-5. Configure as variáveis desejadas em **Environment variables** e clique em **Deploy the stack**. O Portainer clonará o repositório internamente, compilará o JavaFX para Linux e iniciará o contêiner.
+4. Em **Compose path**, mantenha `docker-compose.yml` *(nota: caso não exista a pasta em `/srv/stacks` no host, informe `APP_VOLUME=.` ou altere `context: .`)*;
+5. Configure as variáveis desejadas em **Environment variables** e clique em **Deploy the stack**.
 
 #### Opção C: Via Docker Compose Direto na Pasta (`/srv/stacks/fade-to-black`)
-Se preferir subir sem usar o Web Editor do Portainer:
+Se preferir subir diretamente via terminal na VM:
 ```bash
 cd /srv/stacks/fade-to-black
-docker compose up -d --build
+sudo docker compose up -d --build
 ```
 
 ---
