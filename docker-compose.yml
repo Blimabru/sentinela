@@ -45,11 +45,10 @@ services:
 
     # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
     environment:
-      # Largura horizontal do framebuffer virtual Xvfb em pixels, alinhada à
-      # resolução nativa definida na classe GameApplication (padrão: 800 px).
-      - DISPLAY_WIDTH=${DISPLAY_WIDTH:-800}
-      # Altura vertical do framebuffer virtual Xvfb em pixels (padrão: 600 px).
-      - DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-600}
+      # Largura horizontal do framebuffer virtual Xvfb em pixels (padrão HiDPI 2x: 1600 px).
+      - DISPLAY_WIDTH=${DISPLAY_WIDTH:-1600}
+      # Altura vertical do framebuffer virtual Xvfb em pixels (padrão HiDPI 2x: 1200 px).
+      - DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-1200}
       # Padroniza o fuso horário do sistema operacional interno do contêiner para
       # assegurar precisão temporal nos registros de execução e capturas de tela.
       - TZ=${TZ:-America/Bahia}

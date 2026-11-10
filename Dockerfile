@@ -36,9 +36,9 @@ LABEL description="Project Fade to Black - Web Runtime via Docker, Xvfb e noVNC"
 
 # Suprime prompts interativos durante a instalação de pacotes Debian/Ubuntu (APT).
 ENV DEBIAN_FRONTEND=noninteractive
-# Define as dimensões padrão do servidor de exibição virtual (alinhadas ao canvas 800x600).
-ENV DISPLAY_WIDTH=800
-ENV DISPLAY_HEIGHT=600
+# Define as dimensões padrão do servidor de exibição virtual (padrão HiDPI 2x: 1600x1200).
+ENV DISPLAY_WIDTH=1600
+ENV DISPLAY_HEIGHT=1200
 
 # Instala a pilha mínima de infraestrutura gráfica X11, transmissão Web e fontes:
 # - xvfb: Servidor X virtual em memória (dispensa monitor ou GPU física conectada).
