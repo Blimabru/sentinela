@@ -478,7 +478,7 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
    ```
 
 3. **Cadastre as variáveis na seção *Environment variables* do Portainer** (veja a tabela abaixo) e clique em **Deploy the stack**.  
-   *(Sempre que houver atualizações de código no GitHub, o botão **Recreate** do Portainer apenas recria o contêiner com a imagem antiga em cache; para aplicar o código novo, execute na VM `cd /srv/stacks/fade-to-black && sudo git pull && sudo docker compose up -d --build`.)*
+   *(Quando precisar atualizar o jogo posteriormente, consulte a seção **[4. Passo a Passo para Atualizar o Deploy no Servidor](#4-passo-a-passo-para-atualizar-o-deploy-no-servidor)** abaixo.)*
 
 #### Opção B: Via Git Repository no Portainer (Sem Pasta Física Prévia)
 1. No Portainer, vá em **Stacks** $\to$ **Add stack**;
@@ -561,6 +561,50 @@ Ao acessar `https://fadetoblack.seudominio.com` no seu navegador:
 - A página se conecta instantaneamente ao servidor via WebSocket;
 - O jogo ajusta a resolução do canvas automaticamente ao tamanho da janela do navegador;
 - Os comandos de teclado (`WASD`, `E`, `H`, `T`) respondem com baixa latência em 60 FPS direto na aba da web!
+
+---
+
+### 4. Passo a Passo para Atualizar o Deploy no Servidor
+
+Como a imagem `fade-to-black-game:latest` é compilada localmente a partir do [`Dockerfile`](Dockerfile), apenas clicar em **Recreate** ou **Update the stack** no Portainer reutiliza a imagem antiga em cache. Siga os passos abaixo sempre que houver código novo no GitHub:
+
+#### Etapa 1 — Enviar as alterações do seu PC para o GitHub
+No computador de desenvolvimento:
+```powershell
+git push origin main
+```
+
+#### Etapa 2 — Baixar o código e recompilar a imagem na VM Docker
+Conecte-se via SSH ao servidor onde está o diretório da stack e execute:
+```bash
+cd /srv/stacks/fade-to-black
+sudo git pull
+sudo docker compose build --no-cache
+```
+> *O parâmetro `--no-cache` força o Docker a copiar os arquivos atualizados e recompilar o `fade-to-black.jar` do zero.*
+
+#### Etapa 3 — Reiniciar o contêiner com a imagem nova
+Escolha de acordo com a forma como você gerencia suas variáveis de ambiente:
+
+- **Se você usa as *Environment variables* dentro do Portainer (Recomendado para Portainer):**
+  1. No Portainer, acesse **Stacks** $\to$ **`fade-to-black`** $\to$ aba **Editor**;
+  2. Confira em **Environment variables** se `DISPLAY_WIDTH` (`1600`), `DISPLAY_HEIGHT` (`1200`), `HOST_IP` e `HOST_PORT` estão corretos *(valores antigos salvos no Portainer sobrescrevem o padrão do Compose)*;
+  3. Clique em **Update the stack** — **não** marque *"Re-pull image and redeploy"* (a imagem é local e acabou de ser compilada na Etapa 2) — ou vá no contêiner `fade-to-black-game` e clique em **Recreate**.
+
+- **Se você gerencia tudo via arquivo `.env` e terminal na VM:**
+  ```bash
+  cd /srv/stacks/fade-to-black
+  sudo docker compose up -d --force-recreate
+  ```
+  *(Não execute esse comando pelo terminal sem um `.env` caso suas portas como `HOST_PORT` existam apenas na interface do Portainer, senão o Compose aplicará os valores padrão do YAML.)*
+
+#### Etapa 4 — Validar logs e limpar cache do navegador
+1. Confira na VM se o contêiner subiu usando a nova imagem e resolução esperada:
+   ```bash
+   sudo docker logs fade-to-black-game --tail 25
+   ```
+   Verifique a presença de linhas como `[1/4] Iniciando Display Virtual Xvfb (:0) 1600x1200x24 (Escala 2.00x)...`.
+2. No navegador, pressione **Ctrl + F5** para limpar o cache do cliente Web (`noVNC`) e carregar a nova sessão.
 
 ---
 
