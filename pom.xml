@@ -1,38 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- ===========================================================================
+     Project Object Model (POM) - Project Fade to Black
+     ===========================================================================
+     Define as coordenadas do projeto no ecossistema Maven, propriedades de
+     compilação Java 17, dependências gráficas (OpenJFX) e de testes (JUnit 5),
+     além do pipeline de empacotamento autônomo em Fat JAR executável.
+=========================================================================== -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <!-- Versão do esquema estrutural de descritor suportada pelo Apache Maven -->
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Identificadores únicos (GAV: GroupId, ArtifactId, Version) do artefato -->
     <groupId>cloud.plataformatech</groupId>
     <artifactId>sentinela</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <!-- ── 1. Propriedades Globais de Compilação e Versões ──────────────────── -->
     <properties>
+        <!-- Fixa o bytecode e a API pública da JVM no Java 17 (LTS), garantindo
+             portabilidade mesmo quando compilado em JDKs mais recentes -->
         <maven.compiler.release>17</maven.compiler.release>
+        <!-- Padroniza UTF-8 na leitura dos fontes para preservar acentuação
+             dos textos em português renderizados na HUD e nos logs -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Centraliza a versão do OpenJFX para manter os módulos sincronizados -->
         <javafx.version>17.0.2</javafx.version>
     </properties>
 
+    <!-- ── 2. Árvore de Dependências (Runtime e Testes) ─────────────────────── -->
     <dependencies>
-        <!-- JavaFX -->
+        <!-- Módulo de controles e infraestrutura de ciclo de vida do JavaFX
+             (fornece Application, Stage e gerenciamento de janela) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+
+        <!-- Motor gráfico e renderizador Prism/Glass do JavaFX (fornece Scene,
+             Canvas, GraphicsContext, AnimationTimer, Color e Font) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <!-- JUnit 5 para Testes Automatizados -->
+
+        <!-- API de anotações e asserções do JUnit 5; o escopo 'test' impede que
+             bibliotecas de teste sejam embutidas no Fat JAR final de produção -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Motor de execução do JUnit 5 utilizado pelo Maven Surefire durante
+             a fase 'mvn test' para descoberta e execução das suítes -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -41,8 +66,11 @@
         </dependency>
     </dependencies>
 
+    <!-- ── 3. Pipeline de Build e Plugins de Execução/Empacotamento ─────────── -->
     <build>
         <plugins>
+            <!-- Plugin oficial do OpenJFX para execução direta durante desenvolvimento
+                 via 'mvn javafx:run', configurando o module-path automaticamente -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -51,7 +79,13 @@
                     <mainClass>cloud.plataformatech.fadetoblack.app.GameApplication</mainClass>
                 </configuration>
             </plugin>
-            <!-- Gera o JAR Executável Único (Fat JAR) -->
+
+            <!-- Empacotador de Distribuição Autônoma (Fat JAR / Uber JAR):
+                 Agrupa todas as classes compiladas, bibliotecas JavaFX e binários
+                 nativos da plataforma de compilação em um único 'fade-to-black.jar'.
+                 Usamos a classe 'Launcher' no Manifesto porque executar uma subclasse
+                 de javafx.application.Application via 'java -jar' (Classpath) falha
+                 sem um módulo bootstrap intermediário -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -62,13 +96,16 @@
                             <mainClass>cloud.plataformatech.fadetoblack.app.Launcher</mainClass>
                         </manifest>
                     </archive>
+                    <!-- Descritor pré-definido que mescla classes do projeto e dependências -->
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <!-- Define o nome exato 'fade-to-black.jar' sem sufixo redundante -->
                     <finalName>fade-to-black</finalName>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
                 <executions>
+                    <!-- Vincula automaticamente a geração do Fat JAR à fase 'package' -->
                     <execution>
                         <id>make-assembly</id>
                         <phase>package</phase>

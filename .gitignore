@@ -1,4 +1,13 @@
-# Maven
+# ==============================================================================
+# Regras de Exclusão de Versionamento (.gitignore) - Project Fade to Black
+# ==============================================================================
+# Mantém o repositório Git enxuto e determinístico, impedindo o rastreamento
+# de artefatos compilados, metadados específicos de IDE e arquivos de sistema
+# operacional que variam por estação de trabalho.
+
+# ── 1. Artefatos de Build e Empacotamento Maven / Java ────────────────────────
+# O diretório 'target/' e os arquivos binários (.class, .jar) são gerados
+# dinamicamente pelo Maven Wrapper (mvnw) ou pelo estágio 'builder' no Docker.
 target/
 *.class
 *.jar
@@ -9,12 +18,14 @@ target/
 *.tar.gz
 *.rar
 
-# IDEs
+# ── 2. Configurações Locais de Ambientes de Desenvolvimento (IDEs) ────────────
+# Evita conflitos de preferências pessoais entre IntelliJ IDEA, VS Code e Eclipse.
 .idea/
 *.iml
 .vscode/
 *.eclipse
 
-# OS files
+# ── 3. Arquivos Temporários e Metadados de Sistemas Operacionais ──────────────
+# Descarta índices de miniaturas e cache de exploradores de arquivos (macOS/Windows).
 .DS_Store
 Thumbs.db
