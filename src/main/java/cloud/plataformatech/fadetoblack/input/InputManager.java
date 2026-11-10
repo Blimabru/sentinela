@@ -6,39 +6,39 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Este componente atua como um sistema sensorial, monitorando constantemente o hardware de teclado.
- * Ele cria um registro em tempo real que permite saber exatamente quais teclas estão sendo mantidas
- * pressionadas pelo usuário em qualquer instante.
+ * Subsistemas de captura e consulta de estado de teclado por amostragem (Polling).
+ *
+ * <p>Em vez de acoplar regras de física diretamente aos ouvintes assíncronos de eventos
+ * do sistema operacional (que sofrem com atraso inicial de repetição de tecla e cadência irregular),
+ * esta classe converte eventos discretos de pressionamento e soltura do JavaFX em um registro
+ * contínuo em memória consultável sincronamente pelo Game Loop.</p>
  */
 public class InputManager {
-    
-    // O "HashSet" é uma coleção de dados que armazena elementos únicos. 
-    // Aqui, ele atua como uma "memória", guardando o código de cada tecla que está afundada neste momento.
+
+    // Utiliza HashSet pela busca em tempo constante médio O(1) a cada quadro e por eliminar
+    // duplicatas automaticamente caso o sistema operacional emita eventos repetidos enquanto segurada
     private final Set<KeyCode> activeKeys = new HashSet<>();
 
     /**
-     * Durante a sua construção, este gerenciador se acopla à cena (a tela do jogo) para 
-     * escutar os eventos elétricos ou lógicos gerados pelo teclado.
-     * 
-     * @param scene A cena gráfica fornecida pelo JavaFX, atuando como o alvo do monitoramento de interações.
+     * Registra manipuladores de eventos na cena gráfica para manter o conjunto de teclas ativas
+     * sincronizado em tempo real com a entrada física do usuário.
+     *
+     * @param scene Cena JavaFX alvo cujo foco captura as interações de teclado.
      */
     public InputManager(Scene scene) {
-        // "setOnKeyPressed" programa a cena para que, no instante exato em que qualquer tecla for apertada,
-        // o código dessa tecla seja adicionado à nossa memória (activeKeys).
+        // Insere o código da tecla no conjunto imediatamente ao evento de pressionamento
         scene.setOnKeyPressed(e -> activeKeys.add(e.getCode()));
-        
-        // "setOnKeyReleased" programa a cena para que, no momento em que a tecla for solta,
-        // seu código seja imediatamente apagado da memória.
+
+        // Remove o código da tecla no momento da soltura, encerrando o estado contínuo
         scene.setOnKeyReleased(e -> activeKeys.remove(e.getCode()));
     }
 
     /**
-     * Esta função atua como um sensor de consulta para o resto do sistema. Qualquer outra classe
-     * (como a entidade Player) pode perguntar a este gerenciador se uma tecla de interesse está pressionada.
-     * 
-     * @param code O identificador único da tecla (por exemplo, "KeyCode.W" ou "KeyCode.SPACE").
-     * @return O resultado será "true" (verdadeiro) apenas se a tecla constar na memória de teclas pressionadas, 
-     *         caso contrário, retornará "false" (falso).
+     * Consulta instantaneamente se determinada tecla encontra-se pressionada no quadro corrente.
+     * Utilizado por {@code Player}, {@code GameWorld} e {@code GameEngine} sem bloquear o loop.
+     *
+     * @param code Constante {@link KeyCode} correspondente à tecla monitorada (ex.: {@code KeyCode.W}).
+     * @return {@code true} se a tecla estiver ativa no momento da leitura; {@code false} caso contrário.
      */
     public boolean isKeyPressed(KeyCode code) {
         return activeKeys.contains(code);

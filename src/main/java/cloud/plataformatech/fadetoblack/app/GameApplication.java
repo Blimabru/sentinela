@@ -12,19 +12,38 @@ import javafx.stage.Stage;
 import java.util.List;
 
 /**
- * Ponto de entrada da aplicação JavaFX para o Project Fade to Black.
- * Inicializa a janela principal, configura a cena gráfica, instancia o GameEngine
- * e suporta o modo autônomo de exportação de capturas de tela via argumento de linha de comando.
+ * Ponto de entrada da camada JavaFX para o {@code Project Fade to Black}.
+ *
+ * <p>Orquestra a criação da janela gráfica ({@link Stage}), a resolução lógica base vs. escala HiDPI,
+ * a inicialização do {@link GameEngine} e o roteamento opcional para geração automatizada de
+ * capturas de tela em lote via linha de comando ({@code --capture-screenshots}).</p>
  */
 public class GameApplication extends Application {
 
+    /**
+     * Largura lógica fixa da área de jogo em pixels (equivalente a 20 colunas de 40 px).
+     * Todas as regras de colisão, posicionamento de entidades e layout de HUD utilizam
+     * este sistema de coordenadas lógico, independentemente da resolução física da janela.
+     */
     public static final int WIDTH = 800;
+
+    /**
+     * Altura lógica fixa da área de jogo em pixels (equivalente a 15 linhas de 40 px).
+     */
     public static final int HEIGHT = 600;
 
+    /**
+     * Configura e inicializa a interface gráfica principal do JavaFX.
+     *
+     * @param primaryStage Palco principal gerenciado pelo runtime JavaFX.
+     */
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Project Fade to Black - IA & Telemetria");
 
+        // Lê a propriedade JVM opcional '-Drender.scale' (ex: 2.00 no Docker/Xvfb HiDPI).
+        // Por padrão, renderiza em escala nativa 1.0 (800x600). O fator mínimo é travado em 1.0
+        // para impedir redução abaixo da resolução lógica e consequente perda de legibilidade na HUD.
         double renderScale = 1.0;
         String scaleProp = System.getProperty("render.scale");
         if (scaleProp != null && !scaleProp.isBlank()) {
@@ -35,9 +54,14 @@ public class GameApplication extends Application {
             }
         }
 
+        // Calcula as dimensões físicas reais do Canvas (ex: 1600x1200 em escala 2.0x).
+        // Dimensionar o backing buffer diretamente (em vez de escalar bitmap via SO/GTK) permite
+        // que o Renderer aplique transformação afim no GraphicsContext e desenhe vetores e fontes nítidos.
         int canvasWidth = (int) Math.round(WIDTH * renderScale);
         int canvasHeight = (int) Math.round(HEIGHT * renderScale);
 
+        // Utiliza Group como nó raiz para que a Scene assuma exatamente o tamanho do Canvas
+        // sem margens automáticas ou redimensionamentos implícitos de containers de layout.
         Group root = new Group();
         Scene scene = new Scene(root, canvasWidth, canvasHeight);
         primaryStage.setScene(scene);
@@ -45,51 +69,55 @@ public class GameApplication extends Application {
         Canvas canvas = new Canvas(canvasWidth, canvasHeight);
         root.getChildren().add(canvas);
 
+        // Conecta a cena (captura de teclado) e o canvas (superfície de desenho) ao motor principal
         GameEngine engine = new GameEngine(scene, canvas);
 
-        // Verifica se foi solicitado o modo de geração automatizada de capturas de tela
+        // Verifica se foi solicitado o modo headless/CLI para exportação automática de screenshots
         List<String> rawArgs = getParameters().getRaw();
         boolean captureMode = rawArgs.contains("--capture-screenshots");
 
         if (captureMode) {
             System.out.println("[Automated Capture] Iniciando geração de capturas de tela do projeto...");
             generateScreenshots(engine);
+            // Encerra a thread gráfica JavaFX imediatamente após gerar os arquivos sem abrir janela
             Platform.exit();
             return;
         }
 
-        // Modo de execução normal interativo
+        // Modo de execução normal interativo: inicia o AnimationTimer e exibe a janela
         engine.start();
         primaryStage.show();
     }
 
     /**
-     * Gera programmaticamente as capturas de tela de todos os biomas e mecânicas
-     * para inclusão comprobatória na documentação técnica (README.md).
+     * Simula cenários determinísticos em memória e exporta as capturas PNG de todos os biomas
+     * e mecânicas para {@code docs/screenshots}, mantendo a documentação visual sincronizada com o código.
+     *
+     * @param engine Instância do motor utilizada para avançar ticks de simulação e desenhar o quadro.
      */
     private void generateScreenshots(GameEngine engine) {
-        // 1. Mapa da Masmorra Sombria (A* dos 3 inimigos, piche e portão)
+        // 1. Mapa da Masmorra Sombria: executa 10 passos de 50 ms para que os inimigos calculem e iniciem rotas A*
         engine.getGameWorld().changeMap(MapType.DUNGEON, 4, 4);
         engine.getGameWorld().setNotification("Bioma 1: Masmorra Sombria - Multi-Agentes A* e Piche");
         for (int i = 0; i < 10; i++) engine.update(0.05);
         engine.render(0.016);
         engine.takeScreenshot("1_masmorra_sombras_astar.png");
 
-        // 2. Mapa da Floresta Corrompida (Pontes levadiças, rio, lama e piche)
+        // 2. Mapa da Floresta Corrompida: demonstra rio vertical, lamaçais e pontes levadiças alternadas
         engine.getGameWorld().changeMap(MapType.FOREST, 3, 7);
         engine.getGameWorld().setNotification("Bioma 2: Floresta Corrompida - Rio e Pontes Levadiças");
         for (int i = 0; i < 10; i++) engine.update(0.05);
         engine.render(0.016);
         engine.takeScreenshot("2_floresta_corrompida_pontes.png");
 
-        // 3. Mapa do Pico Nevado (Gelo escorregadio, neve profunda e abismos)
+        // 3. Mapa do Pico Nevado: posiciona o protagonista junto às placas de gelo e neve profunda
         engine.getGameWorld().changeMap(MapType.SNOW, 4, 7);
         engine.getGameWorld().setNotification("Bioma 3: Pico Nevado - Placas de Gelo e Neve Densa");
         for (int i = 0; i < 10; i++) engine.update(0.05);
         engine.render(0.016);
         engine.takeScreenshot("3_pico_nevado_gelo.png");
 
-        // 4. Demonstração de Obstáculos Dinâmicos e Portais
+        // 4. Demonstração de Obstáculos Dinâmicos: posiciona junto à ponte norte e aciona abertura/fechamento manual
         engine.getGameWorld().changeMap(MapType.FOREST, 8, 4);
         engine.getGameWorld().toggleNearestObstacle();
         engine.getGameWorld().setNotification("Mecânica: Portões Mecânicos e Pontes Móveis Interativas");
@@ -97,7 +125,7 @@ public class GameApplication extends Application {
         engine.render(0.016);
         engine.takeScreenshot("4_obstaculos_dinamicos_portas_pontes.png");
 
-        // 5. Demonstração de Telemetria e Métricas de IA sobre a cabeça
+        // 5. Demonstração de Telemetria: enquadra jogador e painéis overhead exibindo métricas de A* (F = G + H)
         engine.getGameWorld().changeMap(MapType.DUNGEON, 9, 8);
         engine.getGameWorld().setNotification("Telemetria: Latência A*, Nós Expandidos e Custo F=G+H");
         for (int i = 0; i < 8; i++) engine.update(0.05);
@@ -107,6 +135,11 @@ public class GameApplication extends Application {
         System.out.println("[Automated Capture] Concluída com sucesso!");
     }
 
+    /**
+     * Inicializa o toolkit JavaFX disparando o método {@link #start(Stage)}.
+     *
+     * @param args Argumentos de linha de comando recebidos da JVM ou de {@link Launcher}.
+     */
     public static void main(String[] args) {
         launch(args);
     }
