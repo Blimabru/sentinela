@@ -96,5 +96,5 @@ sleep 1
 # o recebimento correto de sinais de encerramento (SIGTERM) pelo Docker/Portainer.
 # O parâmetro '-Dprism.order=sw' força o motor Prism do JavaFX a utilizar renderização
 # por software compatível com o framebuffer Xvfb na ausência de aceleração GPU física.
-echo "[*] Inicializando o jogo (sentinela.jar) com renderizador de software Prism..."
-exec java -Dprism.order=sw -jar /app/sentinela.jar
+echo "[*] Inicializando o jogo (fade-to-black.jar) com renderizador de software Prism..."
+exec java -Dprism.order=sw -jar /app/fade-to-black.jar

@@ -1,7 +1,7 @@
 .git
 .mvn
 target
-sentinela.jar
+*.jar
 docs
 jogar.bat
 jogar.sh

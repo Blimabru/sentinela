@@ -19,7 +19,7 @@ WORKDIR /build
 COPY pom.xml .
 COPY src ./src
 
-# Executa a compilação completa e o empacotamento do Fat JAR (sentinela.jar).
+# Executa a compilação completa e o empacotamento do Fat JAR (fade-to-black.jar).
 # Como o build ocorre em sistema Linux x86_64/ARM64, o Maven resolve e embute
 # automaticamente os binários gráficos nativos (.so) do JavaFX para Linux.
 RUN mvn clean package -DskipTests
@@ -73,7 +73,7 @@ WORKDIR /app
 
 # Transfere exclusivamente o executável compilado do estágio 'builder', descartando
 # código-fonte, arquivos intermediários e repositórios de cache do Maven.
-COPY --from=builder /build/target/sentinela.jar /app/sentinela.jar
+COPY --from=builder /build/target/fade-to-black.jar /app/fade-to-black.jar
 
 # Copia o script orquestrador de inicialização dos serviços gráficos e da JVM.
 COPY docker/entrypoint.sh /app/entrypoint.sh

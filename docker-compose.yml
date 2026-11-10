@@ -53,9 +53,9 @@ services:
     # ── 4. Monitoramento Ativo de Saúde (Healthcheck) ─────────────────────────
     healthcheck:
       # Verifica simultaneamente se o display virtual (Xvfb), a aplicação JVM
-      # (sentinela.jar) e o servidor HTTP/WebSocket do noVNC (porta 8080) estão ativos.
+      # (fade-to-black.jar) e o servidor HTTP/WebSocket do noVNC (porta 8080) estão ativos.
       # O padrão '[j]ar' evita que o próprio comando 'pgrep' corresponda a si mesmo.
-      test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/sentinela.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/fade-to-black.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
       # Intervalo regular entre cada verificação periódica de integridade.
       interval: 15s
       # Tempo máximo de espera pela resposta antes de computar falha na checagem.
