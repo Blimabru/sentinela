@@ -56,6 +56,12 @@ public class Renderer {
      * Ciclo principal de renderização do quadro.
      */
     public void render(GameWorld world, double deltaTime) {
+        // Aplica escala HiDPI proporcional ao tamanho físico do Canvas (ex: 1600x1200 = 2.0x)
+        // mantendo todo o sistema lógico de coordenadas em 800x600 sem borramento bitmap
+        double scaleX = gc.getCanvas().getWidth() / GameApplication.WIDTH;
+        double scaleY = gc.getCanvas().getHeight() / GameApplication.HEIGHT;
+        gc.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+
         // Limpeza de fundo com o tom atmosférico do mapa atual
         gc.setFill(world.getTileMap().getCurrentMapType().getAmbientColor());
         gc.fillRect(0, 0, GameApplication.WIDTH, GameApplication.HEIGHT);

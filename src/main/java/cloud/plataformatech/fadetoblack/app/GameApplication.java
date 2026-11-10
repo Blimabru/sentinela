@@ -25,11 +25,24 @@ public class GameApplication extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Project Fade to Black - IA & Telemetria");
 
+        double renderScale = 1.0;
+        String scaleProp = System.getProperty("render.scale");
+        if (scaleProp != null && !scaleProp.isBlank()) {
+            try {
+                renderScale = Math.max(1.0, Double.parseDouble(scaleProp.trim()));
+            } catch (NumberFormatException ignored) {
+                renderScale = 1.0;
+            }
+        }
+
+        int canvasWidth = (int) Math.round(WIDTH * renderScale);
+        int canvasHeight = (int) Math.round(HEIGHT * renderScale);
+
         Group root = new Group();
-        Scene scene = new Scene(root, WIDTH, HEIGHT);
+        Scene scene = new Scene(root, canvasWidth, canvasHeight);
         primaryStage.setScene(scene);
 
-        Canvas canvas = new Canvas(WIDTH, HEIGHT);
+        Canvas canvas = new Canvas(canvasWidth, canvasHeight);
         root.getChildren().add(canvas);
 
         GameEngine engine = new GameEngine(scene, canvas);
