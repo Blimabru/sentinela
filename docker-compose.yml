@@ -64,12 +64,17 @@ services:
       - "${HOST_IP:-10.100.2.101}:${HOST_PORT:-18088}:8080"
 
     # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
+    # Formato das Resoluções Abaixo -> DISPLAY_WIDTH (Largura) x DISPLAY_HEIGHT (Altura):
+    #   • Primeiro número (antes do 'x') = DISPLAY_WIDTH  (Largura horizontal em px)
+    #   • Segundo número (depois do 'x') = DISPLAY_HEIGHT (Altura vertical em px)
+    #   Exemplo para 1600 x 1200 -> DISPLAY_WIDTH=1600 e DISPLAY_HEIGHT=1200.
+    #
     # Resoluções Suportadas (Proporção Lógica Nativa 4:3 -> 800x600 px):
     # O entrypoint.sh calcula automaticamente o fator vetorial de escala HiDPI
-    # mediante a fórmula: RENDER_SCALE = max(1.0, min(W / 800, H / 600)),
+    # mediante a fórmula: RENDER_SCALE = max(1.0, min(DISPLAY_WIDTH / 800, DISPLAY_HEIGHT / 600)),
     # preservando as proporções exatas da grade 20x15 sem distorção de sprites.
     #
-    #  Resoluções 4:3 Recomendadas (preenchem 100% da janela noVNC sem sobras):
+    #  Resoluções 4:3 Recomendadas [WIDTH x HEIGHT] (preenchem 100% da janela noVNC):
     #   • 800  x 600  (Escala 1.00x) -> Mínima suportada / leve para conexões lentas
     #   • 1024 x 768  (Escala 1.28x) -> Intermediária compacta
     #   • 1200 x 900  (Escala 1.50x) -> Equilibrada para telas HD / notebooks
@@ -80,7 +85,8 @@ services:
     #
     #  Notas de Compatibilidade:
     #   • Widescreen (ex: 1280x720 -> 1.20x = 960x720; 1920x1080 -> 1.80x = 1440x1080):
-    #     funciona sem esticar os gráficos, deixando uma faixa lateral escura no Xvfb.
+    #     funciona sem esticar os gráficos (a janela mantém 4:3, sobrando faixa lateral
+    #     escura no Xvfb; prefira 1600x1200 para maior nitidez nativa em 2.00x).
     #   • Abaixo de 800x600 (ex: 640x480): NÃO suportado — a JVM fixa o mínimo em
     #     1.00x (800x600), resultando em corte parcial da área visível do jogo.
     environment:
