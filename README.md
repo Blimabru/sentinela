@@ -459,8 +459,8 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
        ports:
          - "${HOST_IP:-10.100.2.101}:${HOST_PORT:-18088}:8080"
        environment:
-         - DISPLAY_WIDTH=${DISPLAY_WIDTH:-800}
-         - DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-600}
+         - DISPLAY_WIDTH=${DISPLAY_WIDTH:-1600}
+         - DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-1200}
          - TZ=${TZ:-America/Bahia}
        volumes:
          - "${APP_VOLUME:-/srv/stacks/fade-to-black}/screenshots:/app/docs/screenshots"
@@ -505,8 +505,8 @@ Na tela de criação/edição da Stack no Portainer, role até **Environment var
 | **`HOST_IP`** | `10.100.2.101` | `10.100.2.101` | Endereço IP privado da interface de rede da VM Docker onde a porta será vinculada. Use `0.0.0.0` caso deseje escutar em todas as interfaces. |
 | **`HOST_PORT`** | `18088` | `18088` | Porta TCP exposta no servidor host e consumida pelo Proxy Reverso (NGINX UI). |
 | **`APP_VOLUME`** | `/srv/stacks/fade-to-black` | `/srv/stacks/fade-to-black` | Pasta raiz da stack no servidor host onde será gravada a subpasta persistente `screenshots/` (capturas da tecla `F12`). |
-| **`DISPLAY_WIDTH`** | `800` | `800` | Largura em pixels do servidor gráfico virtual Xvfb (deve acompanhar a resolução do Canvas). |
-| **`DISPLAY_HEIGHT`** | `600` | `600` | Altura em pixels do servidor gráfico virtual Xvfb. |
+| **`DISPLAY_WIDTH`** | `1600` | `1600` | Largura em pixels do framebuffer Xvfb (padrão HiDPI 2x = `1600` para escalonamento vetorial nítido). |
+| **`DISPLAY_HEIGHT`** | `1200` | `1200` | Altura em pixels do framebuffer Xvfb (padrão HiDPI 2x = `1200`). |
 | **`TZ`** | `America/Bahia` | `America/Bahia` | Fuso horário padrão do sistema operacional interno do contêiner para registros e timestamps. |
 
 > **Dica (Colagem Rápida no Portainer):** Clique em **Advanced mode** dentro da seção *Environment variables* do Portainer e cole diretamente o bloco abaixo ajustando os seus valores:
@@ -514,8 +514,8 @@ Na tela de criação/edição da Stack no Portainer, role até **Environment var
 > HOST_IP=10.100.2.101
 > HOST_PORT=18088
 > APP_VOLUME=/srv/stacks/fade-to-black
-> DISPLAY_WIDTH=800
-> DISPLAY_HEIGHT=600
+> DISPLAY_WIDTH=1600
+> DISPLAY_HEIGHT=1200
 > TZ=America/Bahia
 > ```
 
