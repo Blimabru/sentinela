@@ -1,200 +1,294 @@
-# 🗡️ Project Fade to Black - Motor de IA e Simulação Multi-Agentes
+# 🗡️ Project Fade to Black — Motor de Simulação, IA Heurística e Físicas 2D
 
-> **Projeto Final de Inteligência Artificial**  
-> Um ARPG (Action Role-Playing Game) 2D top-down com temática *Dark Fantasy*, construído integralmente em **Java 17 e JavaFX**. O projeto implementa navegação autônoma multi-agentes baseada no **algoritmo de busca heurística A* (A-Star)**, pesos dinâmicos de terreno, obstáculos mecânicos interativos (portões e pontes móveis), múltiplos biomas conectados por portais dimensionais e **telemetria em tempo real sobre a cabeça de cada entidade** para auditoria dos algoritmos de IA.
-
----
-
-## 📸 Demonstração Visual e Capturas de Tela
-
-Todas as capturas de tela abaixo foram extraídas diretamente do motor em tempo de execução, demonstrando a fidelidade das implementações algorítmicas, os três arquétipos de agentes autônomos, as superfícies com penalidade de velocidade e a instrumentação matemática dos personagens.
-
-### 1. Masmorra Sombria — Perseguição Multi-Agente com A* e Piche Viscoso
-Demonstração dos três arquétipos de inimigos perseguindo ativamente o Paladino. Observe o desvio da rota do Demônio pelo corredor lateral aberto enquanto o portão central permanece trancado, além das poças de piche negro e lamaçal.
-![Masmorra Sombria - A* Multi-Agentes](docs/screenshots/1_masmorra_sombras_astar.png)
+> Um simulador de Action RPG 2D top-down desenvolvido integralmente em **Java 17 e JavaFX**. O sistema implementa navegação autônoma multi-agentes baseada em **Busca Heurística Informada ($A^*$)**, modelagem de grafos com pesos variáveis de terreno, perturbações dinâmicas de cenário (portões mecânicos e pontes móveis), topologia multi-biomas interligada por portais e **telemetria em tempo real sobre a cabeça das entidades** para diagnóstico algorítmico contínuo.
 
 ---
 
-### 2. Floresta Corrompida — Rios, Pontes Levadiças e Lamaçais
-O rio central divide a floresta em duas margens. A ponte norte está estendida (*ABERTO*), permitindo a travessia das criaturas, enquanto a ponte sul erguida (*FECHADO*) atua como barreira intransponível, forçando o recálculo do A*. O Demônio sofre desaceleração severa ao atravessar a poça de piche (redução para 24 px/s).
-![Floresta Corrompida - Pontes Levadiças](docs/screenshots/2_floresta_corrompida_pontes.png)
+## 📑 Sumário
+
+1. [Visão Geral e Demonstração Visual](#-visão-geral-e-demonstração-visual)
+2. [Arquitetura de Software e Game Loop](#-arquitetura-de-software-e-game-loop)
+3. [Representação Espacial do Ambiente (TileMap e Colisões AABB)](#-representação-espacial-do-ambiente-tilemap-e-colisões-aabb)
+4. [Algoritmo de Busca Heurística A* (A-Star)](#-algoritmo-de-busca-heurística-a-a-star)
+5. [Sistema Multi-Agentes e Arquétipos Autônomos](#-sistema-multi-agentes-e-arquétipos-autônomos)
+6. [Física de Terrenos e Modificadores de Deslocamento](#-física-de-terrenos-e-modificadores-de-deslocamento)
+7. [Obstáculos Dinâmicos e Perturbações em Tempo de Execução](#-obstáculos-dinâmicos-e-perturbações-em-tempo-de-execução)
+8. [Topologia de Biomas e Portais Dimensionais](#-topologia-de-biomas-e-portais-dimensionais)
+9. [Painel de Telemetria em Tempo Real (Overhead HUD)](#-painel-de-telemetria-em-tempo-real-overhead-hud)
+10. [Controles Operacionais e Instruções de Execução](#-controles-operacionais-e-instruções-de-execução)
+
+---
+
+## 📸 Visão Geral e Demonstração Visual
+
+Todas as imagens abaixo foram capturadas diretamente do motor gráfico em execução, demonstrando a convergência dos algoritmos de busca, os diferentes biomas e a instrumentação matemática ativa.
+
+### 1. Masmorra Sombria — Perseguição Multi-Agente em Malha com Piche
+Demonstração dos três agentes autônomos perseguindo simultaneamente o jogador. O algoritmo de busca contorna automaticamente o portão central trancado pelo corredor lateral aberto e pondera o alto custo das poças de piche negro.
+![Masmorra Sombria - Busca A* Multi-Agente](docs/screenshots/1_masmorra_sombras_astar.png)
+
+---
+
+### 2. Floresta Corrompida — Rios, Pontes Levadiças e Pântano
+O rio divide a topologia do mapa. A ponte levadiça norte está abaixada (*ABERTO*), permitindo a passagem dos agentes, enquanto a ponte sul erguida (*FECHADO*) atua como barreira intransponível, obrigando o A* a recalcular o trajeto. O Demônio tem sua velocidade severamente reduzida ao atravessar o piche.
+![Floresta Corrompida - Pontes e Terrenos](docs/screenshots/2_floresta_corrompida_pontes.png)
 
 ---
 
 ### 3. Pico Nevado — Superfícies Glaciais de Gelo, Neve Densa e Abismos
-Neste bioma boreal, o jogador caminha sobre placas de gelo translúcidas com física de conservação inercial (*deslizamento a 135% de velocidade*), ao mesmo tempo em que trechos de neve profunda impõem penalidade de 65% na velocidade de deslocamento.
-![Pico Nevado - Gelo e Neve Densa](docs/screenshots/3_pico_nevado_gelo.png)
+Neste bioma, o jogador experimenta a física de baixa tração sobre placas de gelo translúcidas (*deslizamento inercial a 135% de velocidade*), contrastando com a neve profunda que impõe 65% de penalidade motora.
+![Pico Nevado - Placas de Gelo e Neve Densa](docs/screenshots/3_pico_nevado_gelo.png)
 
 ---
 
-### 4. Obstáculos Dinâmicos — Portões de Aço e Pontes Móveis Interativas
-Comprovação da adaptação algorítmica: quando todas as pontes e portões estão fechados, os agentes A* reconhecem a inacessibilidade do alvo (*Passos: 0 / Rota Inexistente*), retomando o avanço imediatamente no milissegundo em que a passagem mecânica se abre.
-![Obstáculos Dinâmicos em Ação](docs/screenshots/4_obstaculos_dinamicos_portas_pontes.png)
+### 4. Obstáculos Dinâmicos — Reatividade de Rotas em Portões e Pontes
+Demonstração de perturbação dinâmica do grafo: com pontes e portões simultaneamente fechados, os agentes reconhecem em tempo real a ausência de conectividade (*Passos: 0 / Rota Inexistente*), retomando o deslocamento no instante exato da reabertura mecânica.
+![Obstáculos Dinâmicos e Reatividade](docs/screenshots/4_obstaculos_dinamicos_portas_pontes.png)
 
 ---
 
 ### 5. Telemetria e Diagnóstico dos Algoritmos de IA sobre a Cabeça
-Visão detalhada dos painéis de telemetria flutuantes (*Overhead HUD*). O sistema expõe em tempo real o custo total da rota ($F = G + H$), a latência de cálculo em milissegundos ($A^* \text{ Lat}$), a quantidade de nós avaliados na fila de prioridade, o número de passos pendentes e os modificadores físicos de velocidade do terreno.
-![Telemetria e Métricas de IA](docs/screenshots/5_telemetria_metricas_ia.png)
+Visão ampliada dos painéis flutuantes de diagnóstico (*Overhead HUD*). O sistema expõe a equação de custo $F = G + H$, a latência em microssegundos/milissegundos, nós explorados na fila de prioridade, contagem de waypoints e modificadores físicos de velocidade.
+![Telemetria de IA em Tempo Real](docs/screenshots/5_telemetria_metricas_ia.png)
 
 ---
 
-## 🛠️ Tecnologias e Fundações de Engenharia
+## ⚙️ Arquitetura de Software e Game Loop
 
-- **Linguagem:** Java 17 LTS (compilado com flag `--release 17`).
-- **Framework de Renderização e Janela:** OpenJFX (JavaFX 17.0.2).
-- **Gerenciador de Build e Dependências:** Apache Maven Wrapper (`mvnw` / `mvnw.cmd`).
-- **Arquitetura de Software:** Modular (Java Platform Module System - JPMS), Orientação a Objetos estrita, Padrão de Game Loop desacoplado via delta temporal (`AnimationTimer`).
-- **Teoria dos Grafos:** Algoritmo A* com Heurística de Manhattan, Fila de Prioridade indexada (`PriorityQueue`), Conjunto Fechado com tabela hash (`HashSet`), e ponderação de arestas dependente da biologia do agente.
-
-*(Desenvolvido do zero, sem engines prontas como Unity ou Godot, a fim de expor a matemática pura dos algoritmos de busca e física em matrizes bidimensionais).*
-
----
-
-## 🎮 Controles e Comandos de Operação
-
-| Tecla | Função no Jogo | Descrição Operacional |
-| :--- | :--- | :--- |
-| **`W`, `A`, `S`, `D`** ou **Setas** | Movimentação do Jogador | Desloca o Paladino pelo cenário com verificação de colisão AABB desacoplada por eixos. |
-| **`E`** ou **`ESPAÇO`** | Acionar Obstáculo Próximo | Abre ou fecha manualmente o portão de aço ou ponte levadiça mais próxima do jogador. |
-| **`H`** | Alternar HUD de Telemetria | Alterna ciclicamente entre o modo **Completo** (4 linhas de métricas de IA), **Compacto** e **Oculto**. |
-| **`T`** | Trocar de Mapa Imediatamente | Comando de teste rápido: viaja ciclicamente entre Masmorra $\to$ Floresta $\to$ Neve. |
-| **`F12`** | Captura de Tela (Screenshot) | Captura instantaneamente a tela do jogo em PNG de alta definição e salva na pasta `docs/screenshots/`. |
-
----
-
-## 🧠 Algoritmo A* (A-Star) e Inteligência Artificial
-
-A navegação autônoma de cada inimigo é governada pelo algoritmo de busca informada em grafos **A***, operando sobre a malha de nós da matriz do mapa:
-
-$$\mathbf{F(n) = G(n) + H(n)}$$
-
-Onde:
-- **$G(n)$ — Custo Real Acumulado:** O esforço físico somado para transitar da célula inicial até o nó $n$, somando os custos de travessia do terreno de cada tile percorrido.
-- **$H(n)$ — Custo Heurístico Estimado:** Distância de Manhattan admissível do nó $n$ até a posição central do jogador:
-  $$H(n) = |col_n - col_{alvo}| + |row_n - row_{alvo}|$$
-- **$F(n)$ — Custo Total de Prioridade:** Determina a ordem de expansão na fila de prioridade (`PriorityQueue<Node>`), garantindo que o caminho encontrado seja sempre ótimo e com o menor custo de esforço possível.
-
-```mermaid
-graph TD
-    Start([Posição do Agente]) --> Init[Inicializa OpenSet com StartNode e ClosedSet vazio]
-    Init --> Pop{OpenSet está vazio?}
-    Pop -- Sim --> Fail([Rota Inacessível / Jogador Encurralado])
-    Pop -- Não --> Poll[Extrai Nó de menor F da Fila de Prioridade]
-    Poll --> CheckTarget{Nó atual == Alvo?}
-    CheckTarget -- Sim --> Retrace[Reconstrói rota via encadeamento de Pais]
-    Retrace --> Output([Retorna Lista Ordenada de Waypoints])
-    CheckTarget -- Não --> Neighbors[Avalia 4 Vizinhos Cardeais: Norte, Sul, Leste, Oeste]
-    Neighbors --> Filter{Vizinho transitável e fora do ClosedSet?}
-    Filter -- Não --> Discard[Descarta Vizinho]
-    Filter -- Sim --> ComputeCost[Calcula Tentative G = G atual + Custo Modificado do Terreno]
-    ComputeCost --> Better{Caminho mais curto ou nó novo?}
-    Better -- Sim --> UpdateNode[Atualiza G, H de Manhattan, Parent e insere no OpenSet]
-    Better -- Não --> Discard
-    UpdateNode --> Pop
-```
-
----
-
-## 👾 Os 3 Arquétipos de Inimigos Autônomos
-
-Para atender às exigências acadêmicas e de design de IA, o sistema conta com **três arquétipos com comportamentos, físicas e percepções distintas**:
+O motor adota o padrão de projeto **Game Loop Desacoplado**, implementado através do `javafx.animation.AnimationTimer`. 
 
 ```mermaid
 classDiagram
     direction TB
-    class Enemy {
-        -double x, y
-        -EnemyArchetype archetype
-        -AStarPathfinder pathfinder
-        -List~Node~ currentPath
-        +update(deltaTime, targetX, targetY)
-        +recalculatePath(targetX, targetY)
+    class GameEngine {
+        -GameWorld gameWorld
+        -Renderer renderer
+        -InputManager inputManager
+        -long lastTime
+        +handle(long now)
+        +update(double deltaTime)
+        +render(double deltaTime)
     }
 
+    class GameWorld {
+        -Player player
+        -List~Enemy~ enemies
+        -TileMap tileMap
+        +update(double deltaTime, InputManager input)
+        +changeMap(MapType type, int col, int row)
+        +toggleNearestObstacle()
+    }
+
+    class Renderer {
+        -GraphicsContext gc
+        +render(GameWorld world, double deltaTime)
+    }
+
+    GameEngine --> GameWorld : atualiza lógica física
+    GameEngine --> Renderer : despacha renderização
+    GameWorld --> TileMap : orquestra malha espacial
+```
+
+### O Desacoplamento Temporal ($\Delta t$)
+Para assegurar que simulações físicas e velocidades permaneçam perfeitamente idênticas em qualquer monitor (seja a 60 Hz, 144 Hz ou com quedas momentâneas de processamento), todo deslocamento é integrado multiplicando pelo delta de tempo em segundos:
+
+$$x_{t + \Delta t} = x_t + v_x \cdot \Delta t$$
+$$y_{t + \Delta t} = y_t + v_y \cdot \Delta t$$
+
+Um limitador rígido ($\Delta t_{max} = 0.1\text{ s}$) atua como proteção contra o fenômeno de *spiral of death* ou transposição involuntária de barreiras sólidas (*tunneling*).
+
+---
+
+## 🗺️ Representação Espacial do Ambiente (TileMap e Colisões AABB)
+
+O universo físico é modelado como uma **Matriz Bidimensional Discreta** de $20 \times 15$ células, onde cada célula mede $40 \times 40\text{ pixels}$. Essa matriz atua simultaneamente como:
+1. **Camada de Renderização Gráfica:** Projeta texturas e detalhes pixel art.
+2. **Camada de Simulação Física:** Delimita superfícies transitáveis e barreiras sólidas.
+3. **Grafo de Navegação:** Fornece os nós e pesos de arestas para a Inteligência Artificial.
+
+```
+       Coluna 0     Coluna 1     Coluna 2     ...   Coluna 19
+Linha 0 [ Parede ]   [ Parede ]   [ Parede ]         [ Parede ]
+Linha 1 [ Parede ]   [ Portal ]   [  Piso  ]         [ Parede ]
+Linha 2 [ Parede ]   [  Piso  ]   [  Lama  ]         [ Parede ]
+  ...      ...          ...          ...                ...
+Linha 14[ Parede ]   [ Parede ]   [ Parede ]         [ Parede ]
+```
+
+### Detecção de Colisão AABB Desacoplada por Eixos
+Para verificar se uma entidade de largura $W$ e altura $H$ pode se deslocar, o sistema projeta sua caixa delimitadora (*Axis-Aligned Bounding Box*) contra a matriz em 4 vértices críticos:
+
+$$\text{Superior Esquerdo: } (\lfloor x / S \rfloor, \lfloor y / S \rfloor)$$
+$$\text{Superior Direito: } (\lfloor (x + W - \epsilon) / S \rfloor, \lfloor y / S \rfloor)$$
+$$\text{Inferior Esquerdo: } (\lfloor x / S \rfloor, \lfloor (y + H - \epsilon) / S \rfloor)$$
+$$\text{Inferior Direito: } (\lfloor (x + W - \epsilon) / S \rfloor, \lfloor (y + H - \epsilon) / S \rfloor)$$
+
+Onde $S = 40$ (tamanho do tile) e $\epsilon = 0.01$ (margem infinitesimal que impede falso bloqueio de borda).
+
+> **Desacoplamento de Eixos:** O teste de colisão é executado separadamente para o eixo $Y$ e para o eixo $X$. Esse desacoplamento permite que o personagem "escorregue" suavemente pelas paredes ao se mover diagonalmente em cantos, eliminando travamentos bruscos.
+
+---
+
+## 🧠 Algoritmo de Busca Heurística A* (A-Star)
+
+O algoritmo **$A^*$** é uma técnica de busca informada em grafos que encontra o caminho de custo mínimo entre um ponto de partida (posição atual do inimigo) e um ponto de destino (posição do jogador), balanceando a distância já percorrida com a estimativa heurística do trajeto restante:
+
+$$\mathbf{F(n) = G(n) + H(n)}$$
+
+* **$G(n)$ — Custo Real Acumulado:** O esforço exato somado da origem até o nó $n$. Cada passo adiciona o custo de travessia do terreno visitado:
+  $$G(vizinho) = G(atual) + C_{terreno}(vizinho)$$
+* **$H(n)$ — Custo Heurístico Estimado:** Um cálculo matemático otimista da distância restante até o alvo. Como o jogo opera em movimentação ortogonal cardeal (Norte, Sul, Leste, Oeste), adota-se a **Heurística de Manhattan**:
+  $$H(n) = |col_n - col_{alvo}| + |row_n - row_{alvo}|$$
+* **$F(n)$ — Custo Total de Prioridade:** Determina qual nó da fronteira deve ser expandido prioritariamente.
+
+```mermaid
+flowchart TD
+    Start([Início da Busca]) --> OpenInit[Insere Nó Inicial no OpenSet com G=0 e F=H]
+    OpenInit --> LoopCheck{OpenSet vazio?}
+    LoopCheck -- Sim --> NoPath([Destino Inacessível / Retorna Lista Vazia])
+    LoopCheck -- Não --> PopMin[Extrai Nó com menor F da PriorityQueue]
+    PopMin --> AddClosed[Insere Nó no ClosedSet]
+    PopMin --> GoalCheck{Nó == Alvo?}
+    GoalCheck -- Sim --> Retrace[Reconstrói rota de trás para frente via Parent]
+    Retrace --> End([Retorna Lista Ordenada de Waypoints])
+    GoalCheck -- Não --> ForNeighbors[Para cada vizinho: Norte, Sul, Leste, Oeste]
+    ForNeighbors --> ValidCheck{Vizinho no ClosedSet ou Intransponível?}
+    ValidCheck -- Sim --> Discard[Ignora Vizinho]
+    ValidCheck -- Não --> CalcG[Calcula Tentative G = G atual + Custo Terreno]
+    CalcG --> BetterCheck{Tentative G < G do vizinho ou Nó Novo?}
+    BetterCheck -- Sim --> UpdateNode[Atualiza G, calcula H Manhattan, define Parent e insere no OpenSet]
+    BetterCheck -- Não --> Discard
+    UpdateNode --> LoopCheck
+```
+
+### Garantias Teóricas: Admissibilidade e Consistência
+1. **Admissibilidade ($h(n) \le h^*(n)$):** A distância de Manhattan em linha reta nunca excede a distância de menor custo possível no mapa. Por nunca superestimar o custo real, o $A^*$ tem garantia matemática de encontrar a **solução ótima**.
+2. **Consistência (Desigualdade Triangular):** Para qualquer nó $n$ e vizinho $n'$, temos $h(n) \le c(n, n') + h(n')$. Isso assegura que quando um nó é fechado, a rota ótima até ele já foi descoberta, dispensando reavaliações e garantindo máxima eficiência computacional.
+
+### Estruturas de Dados e Complexidade
+- **`openSet` (Fila Aberta):** Implementada via `java.util.PriorityQueue<Node>`. Utiliza a interface `Comparable<Node>` para manter a árvore binária ordenada pelo menor $F(n)$, permitindo extração em tempo $O(\log V)$.
+- **`closedSet` (Conjunto Fechado):** Implementado via `java.util.HashSet<Node>` com métodos `hashCode()` e `equals()` mapeados sobre as coordenadas discretas $(col, row)$, fornecendo checagem de pertinência em tempo $O(1)$.
+
+---
+
+## 👾 Sistema Multi-Agentes e Arquétipos Autônomos
+
+Em vez de agentes com comportamento idêntico variando apenas vida ou dano, o sistema implementa **três arquétipos com fisiologias e percepções algorítmicas distintas**:
+
+```mermaid
+classDiagram
+    direction LR
     class EnemyArchetype {
         <<enumeration>>
         DEMON
         BAT
         GHOST
-        +modifyTerrainCost(Tile)
-        +calculateSpeedFactor(Tile)
+        +modifyTerrainCost(Tile tile) int
+        +calculateSpeedFactor(Tile tile) double
     }
 
-    class AStarPathfinder {
-        -TileMap tileMap
-        +findPath(start, target, costModifier)
-        +getLastCalculationTimeMs()
-        +getNodesExplored()
+    class Enemy {
+        -double x, y
+        -EnemyArchetype archetype
+        -AStarPathfinder pathfinder
+        -List~Node~ currentPath
+        +update(double deltaTime, double targetX, double targetY)
+        +recalculatePath(double targetX, double targetY)
     }
 
-    Enemy --> EnemyArchetype : possui características de
-    Enemy --> AStarPathfinder : calcula caminho próprio
+    Enemy --> EnemyArchetype : parametrizado por
 ```
 
-### Detalhamento dos Arquétipos:
+### Análise Comparativa dos Agentes:
 
-| Inimigo | Papel Tático | Velocidade Base | Modificador de Terreno no A* | Reação Comportamental da IA |
-| :--- | :--- | :--- | :--- | :--- |
-| **Demônio** *(Bruiser)* | Guarda pesado de ataque corpo a corpo | $95\text{ px/s}$ | Paga custo integral ($1\times$). Evita piche e lama quando possível. | Entra em estado de **FÚRIA MELEE** (+30% de velocidade) ao se aproximar a menos de 160 px do jogador. |
-| **Morcego** *(Predador Alado)* | Assediador aéreo ágil e veloz | $135\text{ px/s}$ | Resistência alada: penalidade de lama/neve cortada pela metade ($C_{efetivo} = \frac{C+1}{2}$). | Utiliza **ECO-CAÇADA**. Perseguição rápida com alta taxa de amostragem no A* ($0.28\text{s}$). |
-| **Espírito** *(Espectro Corrompido)* | Espectro flutuante transpassador | $105\text{ px/s}$ | Imunidade etérea: custo de terreno é sempre $1$. Ignora atolamento e lama. | **FLUTUAÇÃO TRANSCENDENTAL**. Deslocamento constante sem sofrer qualquer atrito ou lentidão em biomas adversos. |
-
----
-
-## 🌾 Terrenos com Dificuldade de Movimentação
-
-O jogo implementa múltiplos tipos de piso com características mecânicas e heurísticas próprias, influenciando diretamente a velocidade de caminhada dos personagens e as rotas escolhidas pelo A*:
-
-| Terreno | Custo no A* ($G$) | Modificador de Velocidade | Efeito Físico e Comportamental |
-| :--- | :---: | :---: | :--- |
-| **Pedra Regular / Grama / Neve** | **1** | $1.00\times$ (100%) | Terreno padrão sem qualquer atrito ou penalidade de locomoção. |
-| **Lamaçal Denso** | **2** | $0.50\times$ (50%) | **Lentidão moderada.** Reduz pela metade a velocidade de deslocamento de quem pisa sobre ele. |
-| **Piche Viscoso** | **4** | $0.25\times$ (25%) | **Atolamento severo.** O personagem perde 75% da sua velocidade, ficando praticamente imobilizado. |
-| **Neve Profunda** | **3** | $0.35\times$ (35%) | **Neve acumulada.** Dificulta passos rápidos e força os inimigos inteligentes a contornar o trecho. |
-| **Gelo Escorregadio** | **1** | $1.35\times$ (135%) | **Superfície sem atrito.** Acelera o jogador em 35% e ativa a mecânica inercial de deslizamento e derrapagem. |
-| **Água Profunda / Abismo / Muralha** | $\infty$ | $0.00\times$ (Intransponível) | Bloqueio físico absoluto. Nós marcados como `walkable = false` no grafo. |
+| Arquétipo | Papel e Percepção | Velocidade Base | Modificador Biológico no $A^*$ | Comportamento Reativo |
+| :--- | :--- | :---: | :--- | :--- |
+| **Demônio** *(Bruiser)* | Terrestre pesado; audição apurada e visão frontal. | $95\text{ px/s}$ | Pondera custo integral do terreno ($1.0\times$). Evita lamaçal e piche quando há rotas alternativas. | Entra em **FÚRIA MELEE** (+30% de velocidade: $123.5\text{ px/s}$) quando a distância euclidiana ao jogador é $< 160\text{ px}$. |
+| **Morcego** *(Predador Alado)* | Aéreo ágil; percepção por eco-caçada (ondas sonoras). | $135\text{ px/s}$ | Resistência alada: atenua o custo de terrenos acidentados pela metade: $C_{efetivo} = \max(1, \lfloor (C+1)/2 \rfloor)$. | Cadência ultrarrápida de recálculo no $A^*$ ($0.28\text{s}$), interceptando curvas de forma dinâmica. |
+| **Espírito** *(Espectro)* | Espectral incorpóreo; visão radial 360 graus. | $105\text{ px/s}$ | **Imunidade etérea total:** Qualquer terreno transitável tem custo $1.0$ e velocidade nominal $1.0\times$. | Levitação constante sem produzir ruído e sem sofrer atolamento em poças ou rios. |
 
 ---
 
-## 🚪 Obstáculos Dinâmicos e Mecânicos
+## 🌾 Física de Terrenos e Modificadores de Deslocamento
 
-O sistema integra três tipos de obstáculos móveis gerenciados pela classe `DynamicObstacle`:
-1. **Portões de Aço (Gates):** Grades reforçadas que fecham corredores estratégicos.
-2. **Portas Deslizantes (Sliding Doors):** Painéis maciços que deslizam lateralmente nas paredes.
-3. **Pontes Levadiças (Drawbridges):** Estruturas de pranchas de madeira suspensas por correntes sobre rios de água profunda ou abismos glaciais.
+O motor desacopla o custo de busca do $A^*$ da velocidade física instantânea do ator. O `TileMap` processa múltiplos biomas com propriedades físicas únicas:
 
-### Sincronização em Tempo Real com o A*:
-- **Ciclo Temporal Automático:** Cada obstáculo possui temporizadores independentes de abertura e fechamento (ex: aberto por 4.0s, fechado por 3.5s).
-- **Acionamento Manual:** O jogador pode pressionar `E` ou `Espaço` a até 100 pixels de distância para forçar a abertura ou fechamento da passagem.
-- **Invalidação Instantânea de Rota:** Quando um obstáculo altera seu estado, a malha de transitabilidade do `TileMap` é atualizada e **todos os agentes de IA são notificados imediatamente**. Caso a porta feche no nariz de um inimigo, ele não fica preso; seu A* descarta a rota bloqueada e calcula instantaneamente uma rota alternativa contornando pelo outro lado do mapa.
+$$\text{Velocidade Efetiva} = \text{Velocidade Base} \times \mu_{terreno}$$
+
+| Terreno | Identificador | Custo $G$ no $A^*$ | Multiplicador $\mu$ | Efeito Físico e Comportamental |
+| :--- | :---: | :---: | :---: | :--- |
+| **Pedra / Grama / Neve** | `STONE_FLOOR` / `GRASS` / `SNOW_FLOOR` | **1** | $1.00\times$ (100%) | Atrito nominal. Deslocamento sem restrições. |
+| **Lamaçal Denso** | `MUD` | **2** | $0.50\times$ (50%) | Redução moderada de velocidade por viscosidade de solo. |
+| **Piche Viscoso** | `TAR` | **4** | $0.25\times$ (25%) | Atolamento extremo. Velocidade cai para um quarto da base. |
+| **Neve Profunda** | `DEEP_SNOW` | **3** | $0.35\times$ (35%) | Resistência mecânica densa, induzindo os inimigos a buscar desvios. |
+| **Gelo Escorregadio** | `ICE` | **1** | $1.35\times$ (135%) | Superfície lisa sem atrito com física inercial de derrapagem. |
+| **Muralhas / Água / Abismo** | `WALL` / `WATER` / `ABYSS` | $\infty$ | $0.00\times$ (Bloqueado) | Barreira sólida intransponível (`walkable = false`). |
+
+### Modelagem Física Inercial no Gelo
+Ao caminhar sobre o `ICE`, o Paladino deixa de ter aceleração instantânea e passa a obedecer a equações de **conservação de momento e decaimento inercial**:
+
+$$\mathbf{v}_{t + \Delta t} = (\mathbf{v}_t + \mathbf{a}_{input} \cdot \Delta t) \cdot \mu_{atrito}^{\Delta t \cdot 60}$$
+
+Onde $\mu_{atrito} = 0.94$ e $\mathbf{a}_{input} = 600\text{ px/s}^2$. O jogador experimenta derrapagem autêntica e precisa controlar o contra-esterço.
 
 ---
 
-## 🌀 Biomas e Portais Dimensionais
+## 🚪 Obstáculos Dinâmicos e Perturbações em Tempo de Execução
 
-O mundo do jogo é composto por **três mapas temáticos interconectados**:
+O mundo físico contém mecanismos autônomos que alteram a conectividade do grafo dinamicamente:
+1. **Portões de Ferro (*Gates*):** Grades maciças que fecham corredores estratégicos.
+2. **Portas Deslizantes (*Sliding Doors*):** Barreiras laterais motorizadas.
+3. **Pontes Levadiças (*Drawbridges*):** Plataformas de madeira erguidas por correntes sobre rios e abismos.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Fechado
+    Fechado --> Abrindo : Temporizador expira ou Tecla [E]
+    Abrindo --> Aberto : Transição gráfica atinge 1.0
+    Aberto --> Fechando : Temporizador expira ou Tecla [E]
+    Fechando --> Fechado : Transição gráfica atinge 0.0
+
+    state Aberto {
+        [*] --> OverrideWalkable : dynamicOverride = BRIDGE_PLANK ou null
+        OverrideWalkable --> AStarNotice : Notifica Agentes IA (Recalcular Rota)
+    }
+
+    state Fechado {
+        [*] --> OverrideBlocked : dynamicOverride = GATE_BARRIER ou null
+        OverrideBlocked --> AStarInvalidate : Invalida nós ativos
+    }
+```
+
+### Adaptação Reativa dos Agentes
+Ao contrário de sistemas ingênuos onde inimigos colidem cegamente contra portas fechadas:
+- Cada obstáculo emite uma notificação de mudança de malha para a classe `GameWorld`.
+- Os inimigos inspecionam os próximos nós planejados. Se o portão fechar à frente de um inimigo, o caminho é invalidado imediatamente e o $A^*$ é disparado no mesmo quadro, descobrindo rotas de contorno alternativas.
+
+---
+
+## 🌀 Topologia de Biomas e Portais Dimensionais
+
+O jogo conecta três biomas geograficamente e esteticamente distintos em um anel topológico contínuo:
 
 ```mermaid
 flowchart LR
-    Dungeon["🏰 Masmorra Sombria\n• Pisos de pedra gótica\n• Poças de piche negro\n• Portões de aço deslizantes"]
-    Forest["🌲 Floresta Corrompida\n• Vegetação densa e lamaçais\n• Rio caudaloso central\n• Pontes levadiças ativas"]
-    Snow["❄️ Pico Nevado\n• Cristais de gelo escorregadio\n• Montes de neve profunda\n• Abismos boreais e pontes"]
+    Dungeon["🏰 Masmorra Sombria\n• Corredores góticos\n• Poças de piche\n• Portões de aço"]
+    Forest["🌲 Floresta Corrompida\n• Pântanos e lamaçais\n• Rio caudaloso\n• Pontes levadiças"]
+    Snow["❄️ Pico Nevado\n• Placas de gelo inercial\n• Montes de neve profunda\n• Abismos boreais"]
 
     Dungeon <-->|Portal Esmeralda / Carmesim| Forest
     Forest <-->|Portal Glacial / Esmeralda| Snow
     Snow <-->|Portal Carmesim / Glacial| Dungeon
 ```
 
-- **Mecânica dos Portais:** O jogador é teleportado suavemente ao pisar no vórtice arcano central de um portal. O sistema possui um temporizador de *cooldown* de 1.5s para evitar teleportes em loop infinito.
+- **Mecânica de Transição Segura:** Ao pisar sobre o tile de um `Portal`, a coordenada central do jogador é comparada com a área de tolerância do vórtice. O mapa de destino é instanciado e os agentes de IA são posicionados em nós estratégicos do novo bioma, ativando um *cooldown* de $1.5\text{s}$ para evitar oscilações instantâneas entre mundos.
 
 ---
 
-## 📊 Sistema de Telemetria e Diagnóstico de IA
+## 📊 Painel de Telemetria em Tempo Real (Overhead HUD)
 
-Para atender ao rigor de avaliação acadêmica de algoritmos de Inteligência Artificial, o projeto conta com um **sistema de telemetria visual flutuante sobre a cabeça de cada personagem**:
+Para viabilizar a auditoria científica do funcionamento dos algoritmos em tempo real, cada ator carrega sobre sua cabeça um painel translúcido de telemetria:
 
-### Métricas Exibidas no Overhead do Inimigo:
 ```
 ┌────────────────────────────────────────────────────────┐
 │ [Demônio] PERSEGUINDO (FÚRIA MELEE)                   │
@@ -203,168 +297,56 @@ Para atender ao rigor de avaliação acadêmica de algoritmos de Inteligência A
 │ Vel: 85 px/s | Terreno: Lamaçal Denso (Custo: 2)      │
 └────────────────────────────────────────────────────────┘
 ```
-- **Identificação e Estado da IA:** Indica se o agente está em patrulha, perseguição direta, fúria melee, eco-caçada ou flutuação espectral.
-- **Latência do A* ($\text{ms}$):** Tempo medido em microssegundos com `System.nanoTime()` demonstrando a eficiência computacional do algoritmo.
-- **Nós Explorados:** Quantidade de vértices expandidos na fila de prioridade até a convergência da rota.
-- **Custo $F = G + H$:** Transparência matemática das fórmulas heurísticas adotadas pelo agente.
-- **Passos Restantes:** Contagem decrescente de waypoints pendentes para alcançar o jogador.
-- **Velocidade e Terreno:** Confirmação de que as penalidades de velocidade estão sendo aplicadas conforme a matriz de terrenos.
+
+### Variáveis Monitoradas:
+1. **Estado Comportamental:** Registra o modo deliberativo do agente (`PERSEGUINDO`, `FÚRIA MELEE`, `ECO-CAÇADA`, `FLUTUANDO`).
+2. **Latência de Busca ($A^* \text{ Lat}$):** Tempo gasto pela CPU na execução do método `findPath()`, mensurado em microssegundos com `System.nanoTime()` e formatado em milissegundos ($ms$).
+3. **Volume de Nós Explorados:** Total de células abertas e fechadas na fila de prioridade, mensurando o custo algorítmico da exploração espacial.
+4. **Decomposição do Custo:** Revela numericamente o valor de $F(n)$, a porção acumulada $G(n)$ de esforço de terreno e a distância heurística restante $H(n)$ até o Paladino.
+5. **Passos Restantes:** Contagem decrescente dos waypoints pendentes da trajetória.
+6. **Mecânica Motora:** Velocidade real calculada confrontada com a velocidade inata do personagem e o status de atrito (`NORMAL`, `LENTIDÃO -50%`, `ATOLADO -75%`, `DESLIZANDO +35%`).
 
 ---
 
-## 🏗️ Arquitetura de Classes do Sistema
+## 🎮 Controles Operacionais e Instruções de Execução
 
-O diagrama abaixo detalha a estrutura de classes de todo o projeto:
+### Tabela de Comandos
 
-```mermaid
-classDiagram
-    direction TB
+| Tecla | Ação | Descrição Técnica |
+| :---: | :--- | :--- |
+| **`W`, `A`, `S`, `D`** ou **Setas** | Movimentação | Aplica vetor de deslocamento com checagem de colisão AABB desacoplada. |
+| **`E`** ou **`ESPAÇO`** | Acionamento Mecânico | Inverte o estado de abertura/fechamento do obstáculo dinâmico a até 100 px. |
+| **`H`** | Alternar HUD de Telemetria | Alterna ciclicamente entre os modos **Completo** (4 linhas de métricas), **Compacto** e **Oculto**. |
+| **`T`** | Teletransporte Imediato | Transita ciclicamente entre os 3 biomas do jogo para testes de rotas. |
+| **`F12`** | Captura de Tela | Exporta instantaneamente um frame rasterizado em PNG de alta definição para `docs/screenshots/`. |
 
-    %% Pacotes e Classes Principais
-    class GameApplication {
-        +start(primaryStage)
-        +generateScreenshots(engine)
-    }
+---
 
-    class GameEngine {
-        -GameWorld gameWorld
-        -Renderer renderer
-        -InputManager inputManager
-        +handle(now)
-        +update(deltaTime)
-        +render(deltaTime)
-    }
+### Como Executar o Projeto
 
-    class GameWorld {
-        -Player player
-        -List~Enemy~ enemies
-        -TileMap tileMap
-        +update(deltaTime, input)
-        +changeMap(MapType, col, row)
-        +toggleNearestObstacle()
-    }
+O projeto utiliza o **Maven Wrapper** embarcado, eliminando a necessidade de instalar ferramentas de compilação adicionais na máquina hospedeira.
 
-    class TileMap {
-        -Tile[][] map
-        -List~DynamicObstacle~ dynamicObstacles
-        -List~Portal~ portals
-        +loadMap(MapType)
-        +update(deltaTime)
-        +getTile(col, row)
-    }
+#### Pré-requisitos
+- **Java Development Kit (JDK) 17** ou superior com a variável de ambiente `JAVA_HOME` configurada.
 
-    class Tile {
-        -TerrainType baseType
-        -TerrainType dynamicOverride
-        +isWalkable()
-        +getMovementCost()
-        +getSpeedMultiplier()
-    }
+#### Execução Interativa:
 
-    class DynamicObstacle {
-        -ObstacleType type
-        -boolean open
-        -double stateTimer
-        +update(deltaTime, tileMap)
-        +toggle(tileMap)
-    }
+**No Windows (PowerShell / Prompt de Comando):**
+```powershell
+.\mvnw.cmd clean javafx:run
+```
 
-    class Portal {
-        -MapType targetMap
-        -int targetCol, targetRow
-        +touches(x, y, w, h)
-        +getPulse()
-    }
+**No Linux ou macOS (Bash):**
+```bash
+./mvnw clean javafx:run
+```
 
-    class Player {
-        -double x, y
-        -double currentSpeed
-        -String statusEffect
-        +update(deltaTime, input, tileMap)
-    }
-
-    class Enemy {
-        -EnemyArchetype archetype
-        -AStarPathfinder pathfinder
-        -List~Node~ currentPath
-        +update(deltaTime, targetX, targetY)
-        +recalculatePath(targetX, targetY)
-    }
-
-    class AStarPathfinder {
-        -TileMap tileMap
-        +findPath(startCol, startRow, targetCol, targetRow, modifier)
-        +getLastCalculationTimeMs()
-        +getNodesExplored()
-    }
-
-    class Renderer {
-        -GraphicsContext gc
-        +render(gameWorld, deltaTime)
-        +drawTileMap(tileMap)
-        +drawAStarPaths(enemies)
-        +drawEnemyOverheadHUD(enemy)
-        +drawPlayerOverheadHUD(player)
-    }
-
-    class ScreenshotUtil {
-        +saveCanvasScreenshot(canvas, filename)
-    }
-
-    %% Relações
-    GameApplication --> GameEngine : inicializa
-    GameEngine --> GameWorld : atualiza lógica
-    GameEngine --> Renderer : despacha desenho
-    GameEngine --> ScreenshotUtil : gera capturas
-    GameWorld --> TileMap : orquestra
-    GameWorld --> Player : atualiza
-    GameWorld --> Enemy : gerencia 3 instâncias
-    TileMap --> Tile : armazena grade 20x15
-    TileMap --> DynamicObstacle : contém obstáculos
-    TileMap --> Portal : contém portais
-    Enemy --> AStarPathfinder : requisita rotas
-    Renderer --> GameWorld : lê estados e telemetria
+#### Exportação Autônoma de Capturas de Tela:
+O motor possui uma rotina automatizada que simula os biomas, recalcula o A* e regrava as 5 imagens de demonstração técnica:
+```powershell
+.\mvnw.cmd javafx:run "-Djavafx.args=--capture-screenshots"
 ```
 
 ---
 
-## 🚀 Como Executar o Jogo
-
-O projeto possui o **Maven Wrapper** embarcado, eliminando a necessidade de instalar manualmente o Maven no sistema operacional.
-
-### Pré-requisitos
-- **Java Development Kit (JDK) 17** ou superior instalado e configurado no ambiente (`JAVA_HOME`).
-
-### Passo a Passo
-
-1. **Abra o terminal** na pasta raiz do repositório:
-   ```bash
-   cd sentinela
-   ```
-
-2. **Execute o jogo** com o comando correspondente ao seu sistema:
-
-   **No Windows (PowerShell / CMD):**
-   ```powershell
-   .\mvnw.cmd clean javafx:run
-   ```
-
-   **No Linux ou macOS (Bash):**
-   ```bash
-   ./mvnw clean javafx:run
-   ```
-
-3. **Geração Automatizada de Capturas de Tela:**  
-   Para reexportar todas as capturas de tela dos 3 mapas e das métricas de IA de forma autônoma:
-   ```powershell
-   .\mvnw.cmd javafx:run "-Djavafx.args=--capture-screenshots"
-   ```
-
----
-
-## 👥 Autoria e Contexto Acadêmico
-
-- **Disciplina:** Projeto de Inteligência Artificial
-- **Tema:** ARPG 2D Top-Down com IA Multi-Agentes e Busca Heurística em Grafos
-- **Projeto:** *Fade to Black (Operação Sentinela)*
-- **Licença:** MIT License
+*Project Fade to Black — Engenharia de Software, Algoritmos Heurísticos e Simulação Física 2D.*
