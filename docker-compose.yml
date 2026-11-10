@@ -41,14 +41,14 @@ services:
 
     # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
     environment:
-      # Largura horizontal fixa do framebuffer virtual Xvfb em pixels, alinhada à
-      # resolução nativa definida na classe GameApplication (800 px).
-      - DISPLAY_WIDTH=800
-      # Altura vertical fixa do framebuffer virtual Xvfb em pixels (600 px).
-      - DISPLAY_HEIGHT=600
-      # Fuso horário fixo do sistema operacional interno do contêiner para
+      # Largura horizontal do framebuffer virtual Xvfb em pixels, alinhada à
+      # resolução nativa definida na classe GameApplication (padrão: 800 px).
+      - DISPLAY_WIDTH=${DISPLAY_WIDTH:-800}
+      # Altura vertical do framebuffer virtual Xvfb em pixels (padrão: 600 px).
+      - DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-600}
+      # Padroniza o fuso horário do sistema operacional interno do contêiner para
       # assegurar precisão temporal nos registros de execução e capturas de tela.
-      - TZ=America/Bahia
+      - TZ=${TZ:-America/Bahia}
 
     # ── 4. Persistência de Dados (Capturas de Tela) ───────────────────────────
     volumes:
@@ -63,7 +63,7 @@ services:
       # Verifica simultaneamente se o display virtual (Xvfb), a aplicação JVM
       # (fade-to-black.jar) e o servidor HTTP/WebSocket do noVNC (porta 8080) estão ativos.
       # O padrão '[j]ar' evita que o próprio comando 'pgrep' corresponda a si mesmo.
-      test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/fade-to-black.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
+      test: [ "CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/fade-to-black.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1" ]
       # Intervalo regular entre cada verificação periódica de integridade.
       interval: 15s
       # Tempo máximo de espera pela resposta antes de computar falha na checagem.
@@ -83,7 +83,6 @@ services:
         max-size: "10m"
         # Mantém no máximo 3 arquivos arquivados no histórico de rotação.
         max-file: "3"
-
     # ── 7. Isolamento de Rede (Opcional para Proxy no Mesmo Host Docker) ──────
     # Caso o NGINX UI esteja em execução no mesmo servidor Docker através de uma
     # rede virtual compartilhada, descomente o bloco abaixo para habilitar tráfego
@@ -92,8 +91,8 @@ services:
     # networks:
     #   - proxy-network
 
-# ── Declaração de Infraestrutura de Rede Externa ──────────────────────────────
-# networks:
-#   proxy-network:
-#     # Sinaliza ao Compose que a rede virtual foi criada previamente por outra stack.
-#     external: true
+    # ── Declaração de Infraestrutura de Rede Externa ──────────────────────────────
+    # networks:
+    #   proxy-network:
+    #     # Sinaliza ao Compose que a rede virtual foi criada previamente por outra stack.
+    #     external: true
