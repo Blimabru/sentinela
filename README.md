@@ -425,28 +425,71 @@ flowchart LR
     Docker["📦 Container Docker (sentinela-game)\n• noVNC (Porta 8080)\n• Xvfb (Display Virtual :0)\n• JavaFX (sentinela.jar)"]
 
     User -->|HTTPS :443 / WSS| NginxUI
-    NginxUI -->|Proxy Reverso :8088| Docker
+    NginxUI -->|Proxy Reverso :18088| Docker
 ```
 
 ---
 
 ### 1. Passo a Passo no Portainer
 
-Você pode fazer o deploy diretamente pelo painel do **Portainer** de duas formas:
+Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Build*), a compilação precisa ter acesso ao código-fonte e ao `pom.xml`. Há três maneiras recomendadas de realizar o deploy no **Portainer**:
 
-#### Opção A: Via Git Repository (Recomendado)
+#### Opção A: Padrão `/srv/stacks` + Build Local + Web Editor (Recomendado para Servidores Organizados)
+> **Por que não usar `build:` direto no Web Editor?**  
+> O Portainer *Web Editor* salva o YAML dentro de seu próprio volume interno (`portainer_data`), onde o código-fonte não existe. Gerar a imagem primeiro na pasta física `/srv/stacks/sentinela` permite manter todos os arquivos organizados no servidor e gerenciar o contêiner integralmente pelo Portainer apenas referenciando a imagem compilada (`image: sentinela-game:latest`).
+
+1. **No servidor Docker, clone o projeto e compile a imagem local:**
+   ```bash
+   git clone https://github.com/Blimabru/sentinela.git /srv/stacks/sentinela
+   cd /srv/stacks/sentinela
+   docker build -t sentinela-game:latest .
+   ```
+
+2. **No Portainer (`Stacks` $\to$ `Add stack` $\to$ `Web editor`):**  
+   Cole a definição abaixo (sem o bloco `build:`, apontando para a imagem compilada no passo anterior e utilizando a porta incomum `18088` vinculada ao IP interno do host):
+
+   ```yaml
+   services:
+     sentinela-game:
+       image: sentinela-game:latest
+       container_name: sentinela-game
+       restart: unless-stopped
+       ports:
+         # Restringe a porta 18088 ao IP interno da VM Docker (ajuste para o IP do seu servidor)
+         - "10.100.2.101:18088:8080"
+       environment:
+         - DISPLAY_WIDTH=800
+         - DISPLAY_HEIGHT=600
+         - TZ=America/Bahia
+       healthcheck:
+         test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/sentinela.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
+         interval: 15s
+         timeout: 5s
+         retries: 3
+         start_period: 20s
+       logging:
+         driver: "json-file"
+         options:
+           max-size: "10m"
+           max-file: "3"
+   ```
+
+3. Clique em **Deploy the stack**.  
+   *(Para atualizar o jogo no futuro, basta executar `git pull && docker build -t sentinela-game:latest .` em `/srv/stacks/sentinela` e clicar em **Recreate** no contêiner pelo Portainer).*
+
+#### Opção B: Via Git Repository no Portainer (Automatizado)
 1. No Portainer, vá em **Stacks** $\to$ **Add stack**;
 2. Dê um nome à stack (ex: `sentinela`) e selecione o método **Repository**;
-3. Insira a URL do seu repositório Git e selecione a branch `main`;
+3. Insira a URL `https://github.com/Blimabru/sentinela.git` e selecione a branch `main`;
 4. Em **Compose path**, mantenha `docker-compose.yml`;
-5. Clique em **Deploy the stack**. O Portainer compilará o JavaFX nativamente em Linux (multi-stage build com Maven) e iniciará o container `sentinela-game`.
+5. Clique em **Deploy the stack**. O Portainer clonará o repositório internamente, compilará o JavaFX para Linux e iniciará o contêiner.
 
-#### Opção B: Via Terminal do Servidor ou Web Editor
-Se você já clonou o repositório no servidor, acesse a pasta e suba a stack:
+#### Opção C: Via Docker Compose Direto na Pasta (`/srv/stacks/sentinela`)
+Se preferir subir sem usar o Web Editor do Portainer:
 ```bash
+cd /srv/stacks/sentinela
 docker compose up -d --build
 ```
-Ou, no **Web editor** do Portainer, aponte `build: https://URL-DO-SEU-REPOSITORIO.git#main` no lugar de `context: .` para compilar diretamente a partir do código-fonte remoto.
 
 ---
 
@@ -460,8 +503,8 @@ Como o **noVNC** utiliza conexões persistentes via **WebSockets** para transmit
 ```nginx
 location / {
     # Se estiverem na mesma rede Docker, use http://sentinela-game:8080;
-    # Se o NGINX UI estiver no host ou em outra rede, use http://IP_DO_SERVIDOR:8088;
-    proxy_pass http://IP_DO_SERVIDOR:8088;
+    # Se o NGINX UI estiver no host ou em outra VM, use http://IP_DO_SERVIDOR:18088;
+    proxy_pass http://10.100.2.101:18088;
 
     # Obrigatório para WebSockets (noVNC / websockify)
     proxy_http_version 1.1;
@@ -480,7 +523,7 @@ location / {
 }
 ```
 
-> **Dica (se estiver usando Nginx Proxy Manager / NPM):** Ao criar o *Proxy Host*, aponte para a porta `8088` (ou `sentinela-game:8080` na mesma rede Docker), ative a chave **Websockets Support** (`[x]`) e habilite o SSL na aba correspondente.
+> **Dica (se estiver usando Nginx Proxy Manager / NPM):** Ao criar o *Proxy Host*, aponte para a porta `18088` (ou `sentinela-game:8080` na mesma rede Docker), ative a chave **Websockets Support** (`[x]`) e habilite o SSL na aba correspondente.
 
 ---
 
