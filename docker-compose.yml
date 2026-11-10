@@ -37,7 +37,7 @@ services:
       # NOTA DE SEGURANÇA: Caso o NGINX UI opere em uma máquina virtual dedicada
       # na rede privada, recomenda-se restringir o vínculo ao IP interno do host
       # Docker (ex.: "10.100.2.101:8088:8080") para bloquear acessos diretos externos.
-      - "8088:8080"
+      - "10.100.2.101:8088:8080"
 
     # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
     environment:
