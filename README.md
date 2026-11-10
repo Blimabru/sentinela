@@ -334,11 +334,11 @@ O projeto utiliza o **Maven Wrapper** embarcado, eliminando a necessidade de ins
 
 ### 📦 Tutorial: Compilação e Distribuição do Executável Standalone (JAR)
 
-O projeto foi estruturado para que você possa gerar uma distribuição compilada única e autônoma (**Fat JAR / Uber JAR**). Esse arquivo empacota todo o código compilado da aplicação, os recursos gráficos e o runtime completo do OpenJFX em um único arquivo de aproximadamente ~9.1 MB (`sentinela.jar`).
+O projeto foi estruturado para que você possa gerar uma distribuição compilada única e autônoma (**Fat JAR / Uber JAR**). Esse arquivo empacota todo o código compilado da aplicação, os recursos gráficos e o runtime completo do OpenJFX em um único arquivo de aproximadamente ~9.1 MB (`fade-to-black.jar`).
 
 ---
 
-#### 1. Como Compilar o Jogo (Gerar o `sentinela.jar`)
+#### 1. Como Compilar o Jogo (Gerar o `fade-to-black.jar`)
 
 Para compilar do zero e gerar o arquivo executável final, execute o comando abaixo no terminal na pasta raiz do projeto:
 
@@ -357,13 +357,13 @@ Para compilar do zero e gerar o arquivo executável final, execute o comando aba
 > 2. Executa o `maven-assembly-plugin` (versão 3.7.1) com o descritor `jar-with-dependencies`;
 > 3. Descompacta e embute os binários gráficos do JavaFX (`javafx-controls` e `javafx-graphics`);
 > 4. Insere no manifesto `META-INF/MANIFEST.MF` a diretiva `Main-Class: cloud.plataformatech.fadetoblack.app.Launcher`;
-> 5. Gera o arquivo final pronto para distribuição: `target/sentinela.jar` (e uma cópia na raiz `sentinela.jar`).
+> 5. Gera o arquivo final pronto para distribuição: `target/fade-to-black.jar` (e cópia opcional na raiz `fade-to-black.jar`).
 
 ---
 
 #### 2. Como Abrir o Jogo via Duplo Clique no `.jar`
 
-**Sim! Você pode abrir o jogo dando apenas um duplo clique diretamente no arquivo `sentinela.jar`.**
+**Sim! Você pode abrir o jogo dando apenas um duplo clique diretamente no arquivo `fade-to-black.jar`.**
 
 Como o manifesto do JAR já aponta para a classe `Launcher`, o Windows identifica o arquivo como uma aplicação executável e invoca o `javaw.exe` automaticamente.
 
@@ -372,19 +372,19 @@ Em algumas máquinas Windows, programas descompactadores (como WinRAR ou 7-Zip) 
 
 * **Opção A (Mais Fácil):** Dê um duplo clique no arquivo **[`jogar.bat`](jogar.bat)** (ou execute `./jogar.sh` no Linux/macOS). O script garante a execução com o comando `java -jar` correto em 100% dos computadores.
 * **Opção B (Configurar Duplo Clique Permanente no Windows):**
-  1. Clique com o **botão direito** no arquivo `sentinela.jar` $\to$ **Abrir com** $\to$ **Escolher outro aplicativo**;
+  1. Clique com o **botão direito** no arquivo `fade-to-black.jar` $\to$ **Abrir com** $\to$ **Escolher outro aplicativo**;
   2. Procure por `Java(TM) Platform SE binary` ou navegue até `C:\Arquivos de Programas\Java\...\bin\javaw.exe`;
   3. Marque a caixa de seleção: **"Sempre usar este aplicativo para abrir arquivos .jar"** e clique em OK.
 * **Opção C (Via Terminal):**
   ```powershell
-  java -jar sentinela.jar
+  java -jar fade-to-black.jar
   ```
 
 ---
 
 #### 3. Como Rodar em Qualquer Computador (com apenas o JRE 17+)
 Para enviar o jogo para outra pessoa ou testar em outro computador:
-1. Copie apenas o arquivo **`sentinela.jar`** (e opcionalmente o script `jogar.bat`);
+1. Copie apenas o arquivo **`fade-to-black.jar`** (e opcionalmente o script `jogar.bat`);
 2. O computador de destino só precisa ter o **Java 17 (JRE ou JDK)** instalado;
 3. Não é necessário ter Maven, Git, Eclipse, VS Code ou qualquer SDK configurado. O jogo roda instantaneamente!
 
@@ -422,7 +422,7 @@ O projeto inclui suporte nativo a contêineres Docker com **Web-Streaming gráfi
 flowchart LR
     User["🌐 Jogador no Navegador\n(PC, Tablet ou Celular)"]
     NginxUI["🛡️ NGINX UI / Proxy Host\n(SSL HTTPS + WebSockets)"]
-    Docker["📦 Container Docker (fade-to-black-game)\n• noVNC (Porta 8080)\n• Xvfb (Display Virtual :0)\n• JavaFX (sentinela.jar)"]
+    Docker["📦 Container Docker (fade-to-black-game)\n• noVNC (Porta 8080)\n• Xvfb (Display Virtual :0)\n• JavaFX (fade-to-black.jar)"]
 
     User -->|HTTPS :443 / WSS| NginxUI
     NginxUI -->|Proxy Reverso :18088| Docker
@@ -462,7 +462,7 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
          - DISPLAY_HEIGHT=600
          - TZ=America/Bahia
        healthcheck:
-         test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/sentinela.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
+         test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/fade-to-black.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
          interval: 15s
          timeout: 5s
          retries: 3
