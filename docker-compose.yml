@@ -1,5 +1,5 @@
 # ==============================================================================
-# Stack: Sentinela (Project Fade to Black) - Motor Gráfico e IA Heurística 2D
+# Stack: Project Fade to Black - Motor Gráfico e IA Heurística 2D
 # Ambiente: Linux / Debian (VM Docker gerenciada via Portainer)
 # Descrição: Aplicação desktop Java 17 / JavaFX encapsulada em contêiner com
 #            servidor gráfico virtual (Xvfb) e transmissão em tempo real via
@@ -7,7 +7,7 @@
 # ==============================================================================
 
 services:
-  sentinela-game:
+  fade-to-black-game:
     # ── 1. Construção, Imagem e Ciclo de Vida ──────────────────────────────────
 
     # Instrui o Docker Compose a compilar a imagem localmente a partir do
@@ -19,11 +19,11 @@ services:
       dockerfile: Dockerfile
 
     # Tag local atribuída à imagem resultante do processo de compilação.
-    image: sentinela-game:latest
+    image: fade-to-black-game:latest
 
     # Identificador textual fixo para gerenciamento no painel do Portainer e
     # inspeção direta via CLI ('docker ps' / 'docker logs').
-    container_name: sentinela-game
+    container_name: fade-to-black-game
 
     # Política de reinicialização contínua: reergue o serviço automaticamente após
     # falhas inesperadas ou reinicialização do servidor host, exceto em parada manual.
@@ -79,7 +79,7 @@ services:
     # ── 6. Isolamento de Rede (Opcional para Proxy no Mesmo Host Docker) ──────
     # Caso o NGINX UI esteja em execução no mesmo servidor Docker através de uma
     # rede virtual compartilhada, descomente o bloco abaixo para habilitar tráfego
-    # interno pelo nome do serviço ('http://sentinela-game:8080'), podendo então
+    # interno pelo nome do serviço ('http://fade-to-black-game:8080'), podendo então
     # remover a publicação direta da seção 'ports' acima.
     # networks:
     #   - proxy-network

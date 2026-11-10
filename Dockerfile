@@ -1,5 +1,5 @@
 # ==============================================================================
-# Dockerfile: Sentinela (Project Fade to Black) - Multi-stage Web Runtime
+# Dockerfile: Project Fade to Black - Multi-stage Web Runtime
 # Base Build: Maven 3.9 + Eclipse Temurin JDK 17 (Compilação Nativa Linux)
 # Base Runtime: Eclipse Temurin JRE 17 (Ubuntu Jammy) + Xvfb + noVNC
 # Descrição: Compila os artefatos Java/JavaFX com bibliotecas nativas Linux (.so)
