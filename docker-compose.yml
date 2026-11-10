@@ -5,6 +5,26 @@
 #            servidor gráfico virtual (Xvfb) e transmissão em tempo real via
 #            WebSockets (noVNC), projetada para disponibilização via NGINX UI.
 # ==============================================================================
+#
+# ── Lista de Variáveis de Ambiente (.env ou Portainer -> Advanced mode) ────────
+# Copie o bloco puro abaixo (sem comentários na mesma linha) para o arquivo '.env'
+# ao lado deste docker-compose.yml ou em Portainer -> Environment variables -> Advanced:
+#
+# HOST_IP=10.100.2.101
+# HOST_PORT=18088
+# APP_VOLUME=/srv/stacks/fade-to-black
+# DISPLAY_WIDTH=1600
+# DISPLAY_HEIGHT=1200
+# TZ=America/Bahia
+#
+# Descrição rápida das variáveis (todas opcionais, pois possuem padrão via ':-'):
+#   • HOST_IP        -> IP do servidor Docker vinculado à porta (0.0.0.0 p/ todas interfaces).
+#   • HOST_PORT      -> Porta TCP publicada no host e apontada no Proxy Reverso (NGINX UI).
+#   • APP_VOLUME     -> Caminho físico da stack no host (usado no build e em ./screenshots).
+#   • DISPLAY_WIDTH  -> Largura virtual do Xvfb em px (padrão HiDPI 2x: 1600).
+#   • DISPLAY_HEIGHT -> Altura virtual do Xvfb em px (padrão HiDPI 2x: 1200).
+#   • TZ             -> Fuso horário interno do contêiner para logs e screenshots.
+# ==============================================================================
 
 services:
   fade-to-black-game:
@@ -44,6 +64,25 @@ services:
       - "${HOST_IP:-10.100.2.101}:${HOST_PORT:-18088}:8080"
 
     # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
+    # Resoluções Suportadas (Proporção Lógica Nativa 4:3 -> 800x600 px):
+    # O entrypoint.sh calcula automaticamente o fator vetorial de escala HiDPI
+    # mediante a fórmula: RENDER_SCALE = max(1.0, min(W / 800, H / 600)),
+    # preservando as proporções exatas da grade 20x15 sem distorção de sprites.
+    #
+    #  Resoluções 4:3 Recomendadas (preenchem 100% da janela noVNC sem sobras):
+    #   • 800  x 600  (Escala 1.00x) -> Mínima suportada / leve para conexões lentas
+    #   • 1024 x 768  (Escala 1.28x) -> Intermediária compacta
+    #   • 1200 x 900  (Escala 1.50x) -> Equilibrada para telas HD / notebooks
+    #   • 1600 x 1200 (Escala 2.00x) -> PADRÃO RECOMENDADO (HiDPI 2x nítido em Full HD)
+    #   • 2000 x 1500 (Escala 2.50x) -> Alta definição para monitores QHD
+    #   • 2400 x 1800 (Escala 3.00x) -> HiDPI 3x (maior uso de CPU e banda noVNC)
+    #   • 3200 x 2400 (Escala 4.00x) -> Ultra HiDPI 4x (renderização por software pesada)
+    #
+    #  Notas de Compatibilidade:
+    #   • Widescreen (ex: 1280x720 -> 1.20x = 960x720; 1920x1080 -> 1.80x = 1440x1080):
+    #     funciona sem esticar os gráficos, deixando uma faixa lateral escura no Xvfb.
+    #   • Abaixo de 800x600 (ex: 640x480): NÃO suportado — a JVM fixa o mínimo em
+    #     1.00x (800x600), resultando em corte parcial da área visível do jogo.
     environment:
       # Largura horizontal do framebuffer virtual Xvfb em pixels (padrão HiDPI 2x: 1600 px).
       - DISPLAY_WIDTH=${DISPLAY_WIDTH:-1600}
