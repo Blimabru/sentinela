@@ -1,23 +1,91 @@
-version: '3.8'
+# ==============================================================================
+# Stack: Sentinela (Project Fade to Black) - Motor Gráfico e IA Heurística 2D
+# Ambiente: Linux / Debian (VM Docker gerenciada via Portainer)
+# Descrição: Aplicação desktop Java 17 / JavaFX encapsulada em contêiner com
+#            servidor gráfico virtual (Xvfb) e transmissão em tempo real via
+#            WebSockets (noVNC), projetada para disponibilização via NGINX UI.
+# ==============================================================================
 
 services:
   sentinela-game:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: sentinela-game
-    restart: unless-stopped
-    ports:
-      # Porta externa 8088 redirecionada para a porta web 8080 do noVNC no container
-      - "8088:8080"
-    environment:
-      - DISPLAY_WIDTH=800
-      - DISPLAY_HEIGHT=600
-    # Se o seu NGINX UI estiver em uma rede Docker compartilhada (ex: proxy_network),
-    # descomente as linhas abaixo para conectar o container diretamente a ela:
-    # networks:
-    #   - proxy_network
+    # ── 1. Construção, Imagem e Ciclo de Vida ──────────────────────────────────
 
+    # Instrui o Docker Compose a compilar a imagem localmente a partir do
+    # Dockerfile presente na raiz do repositório (Multi-stage Build).
+    build:
+      # Define o diretório raiz do projeto como contexto de envio para o daemon Docker.
+      context: .
+      # Especifica o arquivo de definição das etapas de compilação e execução.
+      dockerfile: Dockerfile
+
+    # Tag local atribuída à imagem resultante do processo de compilação.
+    image: sentinela-game:latest
+
+    # Identificador textual fixo para gerenciamento no painel do Portainer e
+    # inspeção direta via CLI ('docker ps' / 'docker logs').
+    container_name: sentinela-game
+
+    # Política de reinicialização contínua: reergue o serviço automaticamente após
+    # falhas inesperadas ou reinicialização do servidor host, exceto em parada manual.
+    restart: unless-stopped
+
+    # ── 2. Exposição de Rede e Integração com Proxy Reverso ──────────────────
+    ports:
+      # Formato [Porta_Host]:[Porta_Contêiner]
+      # Publica a interface HTTP/WebSocket do noVNC (porta interna 8080) na
+      # porta externa 8088 do servidor host para consumo pelo NGINX UI.
+      # NOTA DE SEGURANÇA: Caso o NGINX UI opere em uma máquina virtual dedicada
+      # na rede privada, recomenda-se restringir o vínculo ao IP interno do host
+      # Docker (ex.: "10.100.2.101:8088:8080") para bloquear acessos diretos externos.
+      - "8088:8080"
+
+    # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
+    environment:
+      # Largura horizontal do framebuffer virtual Xvfb em pixels, alinhada à
+      # resolução nativa definida na classe GameApplication (800 px).
+      - DISPLAY_WIDTH=800
+      # Altura vertical do framebuffer virtual Xvfb em pixels (600 px).
+      - DISPLAY_HEIGHT=600
+      # Padroniza o fuso horário do sistema operacional interno do contêiner para
+      # assegurar precisão temporal nos registros de execução.
+      - TZ=America/Bahia
+
+    # ── 4. Monitoramento Ativo de Saúde (Healthcheck) ─────────────────────────
+    healthcheck:
+      # Verifica simultaneamente se o display virtual (Xvfb), a aplicação JVM
+      # (sentinela.jar) e o servidor HTTP/WebSocket do noVNC (porta 8080) estão ativos.
+      # O padrão '[j]ar' evita que o próprio comando 'pgrep' corresponda a si mesmo.
+      test: ["CMD-SHELL", "pgrep -x Xvfb >/dev/null && pgrep -f '[j]ar /app/sentinela.jar' >/dev/null && python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8080/\", timeout=2)' >/dev/null 2>&1"]
+      # Intervalo regular entre cada verificação periódica de integridade.
+      interval: 15s
+      # Tempo máximo de espera pela resposta antes de computar falha na checagem.
+      timeout: 5s
+      # Número de falhas consecutivas necessárias para declarar estado 'unhealthy'.
+      retries: 3
+      # Período inicial de carência durante o boot para carregamento do X11 e da JVM.
+      start_period: 20s
+
+    # ── 5. Controle e Rotação de Armazenamento de Logs ────────────────────────
+    logging:
+      # Utiliza o driver padrão JSON do Docker para armazenamento estruturado de logs.
+      driver: "json-file"
+      options:
+        # Limita o tamanho máximo de cada arquivo de log a 10 Megabytes, prevenindo
+        # o esgotamento gradual do armazenamento em disco da máquina virtual.
+        max-size: "10m"
+        # Mantém no máximo 3 arquivos arquivados no histórico de rotação.
+        max-file: "3"
+
+    # ── 6. Isolamento de Rede (Opcional para Proxy no Mesmo Host Docker) ──────
+    # Caso o NGINX UI esteja em execução no mesmo servidor Docker através de uma
+    # rede virtual compartilhada, descomente o bloco abaixo para habilitar tráfego
+    # interno pelo nome do serviço ('http://sentinela-game:8080'), podendo então
+    # remover a publicação direta da seção 'ports' acima.
+    # networks:
+    #   - proxy-network
+
+# ── Declaração de Infraestrutura de Rede Externa ──────────────────────────────
 # networks:
-#   proxy_network:
+#   proxy-network:
+#     # Sinaliza ao Compose que a rede virtual foi criada previamente por outra stack.
 #     external: true

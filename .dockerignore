@@ -1,7 +1,22 @@
+# ==============================================================================
+# Arquivo: .dockerignore - Filtro de Contexto de Build Docker
+# Descrição: Define arquivos e diretórios locais que devem ser ignorados pelo
+#            daemon Docker ao enviar o contexto para construção da imagem.
+# ==============================================================================
+
+# ── 1. Controle de Versão e Ferramentas de Build do Host ──────────────────────
+# Exclui o histórico Git e o wrapper local para acelerar o envio do contexto.
 .git
 .mvn
+
+# ── 2. Artefatos Compilados e Binários Nativos do Host (Windows) ──────────────
+# Impede que builds gerados localmente no Windows (com DLLs nativas do JavaFX)
+# sejam copiados para o contêiner Linux, forçando compilação limpa no estágio 1.
 target
 sentinela.jar
+
+# ── 3. Documentação e Scripts Exclusivos de Execução Desktop ──────────────────
+# Omite capturas de tela, manuais e atalhos desktop desnecessários no servidor.
 docs
 jogar.bat
 jogar.sh
