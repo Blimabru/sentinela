@@ -16,6 +16,7 @@
 8. [Topologia de Biomas e Portais Dimensionais](#-topologia-de-biomas-e-portais-dimensionais)
 9. [Painel de Telemetria em Tempo Real (Overhead HUD)](#-painel-de-telemetria-em-tempo-real-overhead-hud)
 10. [Controles Operacionais e Instruções de Execução](#-controles-operacionais-e-instruções-de-execução)
+11. [Deploy na Web via Docker, Portainer e NGINX UI](#-deploy-na-web-via-docker-portainer-e-nginx-ui)
 
 ---
 
@@ -410,6 +411,85 @@ O motor possui uma rotina automatizada que simula os biomas, recalcula o A* e re
 ```powershell
 .\mvnw.cmd javafx:run "-Djavafx.args=--capture-screenshots"
 ```
+
+---
+
+## 🐳 Deploy na Web via Docker, Portainer e NGINX UI
+
+O projeto inclui suporte nativo a contêineres Docker com **Web-Streaming gráfico em tempo real** através do **noVNC + Xvfb**. Isso permite que o jogo em JavaFX seja executado em um servidor Linux e jogado diretamente em qualquer navegador Web (Chrome, Edge, Firefox, Safari ou celular), sem que o jogador precise instalar nada.
+
+```mermaid
+flowchart LR
+    User["🌐 Jogador no Navegador\n(PC, Tablet ou Celular)"]
+    NginxUI["🛡️ NGINX UI / Proxy Host\n(SSL HTTPS + WebSockets)"]
+    Docker["📦 Container Docker (sentinela-game)\n• noVNC (Porta 8080)\n• Xvfb (Display Virtual :0)\n• JavaFX (sentinela.jar)"]
+
+    User -->|HTTPS :443 / WSS| NginxUI
+    NginxUI -->|Proxy Reverso :8088| Docker
+```
+
+---
+
+### 1. Passo a Passo no Portainer
+
+Você pode fazer o deploy diretamente pelo painel do **Portainer** de duas formas:
+
+#### Opção A: Via Git Repository (Recomendado)
+1. No Portainer, vá em **Stacks** $\to$ **Add stack**;
+2. Dê um nome à stack (ex: `sentinela`) e selecione o método **Repository**;
+3. Insira a URL do seu repositório Git e selecione a branch `main`;
+4. Em **Compose path**, mantenha `docker-compose.yml`;
+5. Clique em **Deploy the stack**. O Portainer compilará o JavaFX nativamente em Linux (multi-stage build com Maven) e iniciará o container `sentinela-game`.
+
+#### Opção B: Via Terminal do Servidor ou Web Editor
+Se você já clonou o repositório no servidor, acesse a pasta e suba a stack:
+```bash
+docker compose up -d --build
+```
+Ou, no **Web editor** do Portainer, aponte `build: https://URL-DO-SEU-REPOSITORIO.git#main` no lugar de `context: .` para compilar diretamente a partir do código-fonte remoto.
+
+---
+
+### 2. Configuração no NGINX UI
+
+Como o **noVNC** utiliza conexões persistentes via **WebSockets** para transmitir os quadros do Canvas e os eventos de teclado em tempo real, o Proxy Reverso deve obrigatoriamente encaminhar os cabeçalhos de *Upgrade*.
+
+1. Acesse o painel do **NGINX UI** e vá em **Sites** (ou **Web Sites**) $\to$ **Add Site**;
+2. Configure o domínio desejado (ex: `sentinela.seudominio.com`), ative o certificado **SSL (Let's Encrypt)** e configure o bloco **`location /`** com Proxy Reverso:
+
+```nginx
+location / {
+    # Se estiverem na mesma rede Docker, use http://sentinela-game:8080;
+    # Se o NGINX UI estiver no host ou em outra rede, use http://IP_DO_SERVIDOR:8088;
+    proxy_pass http://IP_DO_SERVIDOR:8088;
+
+    # Obrigatório para WebSockets (noVNC / websockify)
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+
+    # Cabeçalhos padrão de Proxy Reverso
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Evita desconexão durante pausas sem movimento
+    proxy_read_timeout 86400s;
+    proxy_send_timeout 86400s;
+}
+```
+
+> **Dica (se estiver usando Nginx Proxy Manager / NPM):** Ao criar o *Proxy Host*, aponte para a porta `8088` (ou `sentinela-game:8080` na mesma rede Docker), ative a chave **Websockets Support** (`[x]`) e habilite o SSL na aba correspondente.
+
+---
+
+### 3. Acessando e Jogando no Navegador
+
+Ao acessar `https://jogo.seudominio.com` no seu navegador:
+- A página se conecta instantaneamente ao servidor via WebSocket;
+- O jogo ajusta a resolução do canvas automaticamente ao tamanho da janela do navegador;
+- Os comandos de teclado (`WASD`, `E`, `H`, `T`) respondem com baixa latência em 60 FPS direto na aba da web!
 
 ---
 
