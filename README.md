@@ -422,7 +422,7 @@ O projeto inclui suporte nativo a contêineres Docker com **Web-Streaming gráfi
 flowchart LR
     User["🌐 Jogador no Navegador\n(PC, Tablet ou Celular)"]
     NginxUI["🛡️ NGINX UI / Proxy Host\n(SSL HTTPS + WebSockets)"]
-    Docker["📦 Container Docker (sentinela-game)\n• noVNC (Porta 8080)\n• Xvfb (Display Virtual :0)\n• JavaFX (sentinela.jar)"]
+    Docker["📦 Container Docker (fade-to-black-game)\n• noVNC (Porta 8080)\n• Xvfb (Display Virtual :0)\n• JavaFX (sentinela.jar)"]
 
     User -->|HTTPS :443 / WSS| NginxUI
     NginxUI -->|Proxy Reverso :18088| Docker
@@ -436,13 +436,13 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
 
 #### Opção A: Padrão `/srv/stacks` + Build Local + Web Editor (Recomendado para Servidores Organizados)
 > **Por que não usar `build:` direto no Web Editor?**  
-> O Portainer *Web Editor* salva o YAML dentro de seu próprio volume interno (`portainer_data`), onde o código-fonte não existe. Gerar a imagem primeiro na pasta física `/srv/stacks/sentinela` permite manter todos os arquivos organizados no servidor e gerenciar o contêiner integralmente pelo Portainer apenas referenciando a imagem compilada (`image: sentinela-game:latest`).
+> O Portainer *Web Editor* salva o YAML dentro de seu próprio volume interno (`portainer_data`), onde o código-fonte não existe. Gerar a imagem primeiro na pasta física `/srv/stacks/fade-to-black` permite manter todos os arquivos organizados no servidor e gerenciar o contêiner integralmente pelo Portainer apenas referenciando a imagem compilada (`image: fade-to-black-game:latest`).
 
 1. **No servidor Docker, clone o projeto e compile a imagem local:**
    ```bash
-   git clone https://github.com/Blimabru/sentinela.git /srv/stacks/sentinela
-   cd /srv/stacks/sentinela
-   docker build -t sentinela-game:latest .
+   git clone https://github.com/Blimabru/sentinela.git /srv/stacks/fade-to-black
+   cd /srv/stacks/fade-to-black
+   docker build -t fade-to-black-game:latest .
    ```
 
 2. **No Portainer (`Stacks` $\to$ `Add stack` $\to$ `Web editor`):**  
@@ -450,9 +450,9 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
 
    ```yaml
    services:
-     sentinela-game:
-       image: sentinela-game:latest
-       container_name: sentinela-game
+     fade-to-black-game:
+       image: fade-to-black-game:latest
+       container_name: fade-to-black-game
        restart: unless-stopped
        ports:
          # Restringe a porta 18088 ao IP interno da VM Docker (ajuste para o IP do seu servidor)
@@ -475,19 +475,19 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
    ```
 
 3. Clique em **Deploy the stack**.  
-   *(Para atualizar o jogo no futuro, basta executar `git pull && docker build -t sentinela-game:latest .` em `/srv/stacks/sentinela` e clicar em **Recreate** no contêiner pelo Portainer).*
+   *(Para atualizar o jogo no futuro, basta executar `git pull && docker build -t fade-to-black-game:latest .` em `/srv/stacks/fade-to-black` e clicar em **Recreate** no contêiner pelo Portainer).*
 
 #### Opção B: Via Git Repository no Portainer (Automatizado)
 1. No Portainer, vá em **Stacks** $\to$ **Add stack**;
-2. Dê um nome à stack (ex: `sentinela`) e selecione o método **Repository**;
+2. Dê um nome à stack (ex: `fade-to-black`) e selecione o método **Repository**;
 3. Insira a URL `https://github.com/Blimabru/sentinela.git` e selecione a branch `main`;
 4. Em **Compose path**, mantenha `docker-compose.yml`;
 5. Clique em **Deploy the stack**. O Portainer clonará o repositório internamente, compilará o JavaFX para Linux e iniciará o contêiner.
 
-#### Opção C: Via Docker Compose Direto na Pasta (`/srv/stacks/sentinela`)
+#### Opção C: Via Docker Compose Direto na Pasta (`/srv/stacks/fade-to-black`)
 Se preferir subir sem usar o Web Editor do Portainer:
 ```bash
-cd /srv/stacks/sentinela
+cd /srv/stacks/fade-to-black
 docker compose up -d --build
 ```
 
@@ -498,11 +498,11 @@ docker compose up -d --build
 Como o **noVNC** utiliza conexões persistentes via **WebSockets** para transmitir os quadros do Canvas e os eventos de teclado em tempo real, o Proxy Reverso deve obrigatoriamente encaminhar os cabeçalhos de *Upgrade*.
 
 1. Acesse o painel do **NGINX UI** e vá em **Sites** (ou **Web Sites**) $\to$ **Add Site**;
-2. Configure o domínio desejado (ex: `sentinela.seudominio.com`), ative o certificado **SSL (Let's Encrypt)** e configure o bloco **`location /`** com Proxy Reverso:
+2. Configure o domínio desejado (ex: `fadetoblack.seudominio.com`), ative o certificado **SSL (Let's Encrypt)** e configure o bloco **`location /`** com Proxy Reverso:
 
 ```nginx
 location / {
-    # Se estiverem na mesma rede Docker, use http://sentinela-game:8080;
+    # Se estiverem na mesma rede Docker, use http://fade-to-black-game:8080;
     # Se o NGINX UI estiver no host ou em outra VM, use http://IP_DO_SERVIDOR:18088;
     proxy_pass http://10.100.2.101:18088;
 
@@ -523,13 +523,13 @@ location / {
 }
 ```
 
-> **Dica (se estiver usando Nginx Proxy Manager / NPM):** Ao criar o *Proxy Host*, aponte para a porta `18088` (ou `sentinela-game:8080` na mesma rede Docker), ative a chave **Websockets Support** (`[x]`) e habilite o SSL na aba correspondente.
+> **Dica (se estiver usando Nginx Proxy Manager / NPM):** Ao criar o *Proxy Host*, aponte para a porta `18088` (ou `fade-to-black-game:8080` na mesma rede Docker), ative a chave **Websockets Support** (`[x]`) e habilite o SSL na aba correspondente.
 
 ---
 
 ### 3. Acessando e Jogando no Navegador
 
-Ao acessar `https://jogo.seudominio.com` no seu navegador:
+Ao acessar `https://fadetoblack.seudominio.com` no seu navegador:
 - A página se conecta instantaneamente ao servidor via WebSocket;
 - O jogo ajusta a resolução do canvas automaticamente ao tamanho da janela do navegador;
 - Os comandos de teclado (`WASD`, `E`, `H`, `T`) respondem com baixa latência em 60 FPS direto na aba da web!
