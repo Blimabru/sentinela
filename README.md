@@ -478,7 +478,7 @@ Como o projeto utiliza um [`Dockerfile`](Dockerfile) próprio (*Multi-stage Buil
    ```
 
 3. **Cadastre as variáveis na seção *Environment variables* do Portainer** (veja a tabela abaixo) e clique em **Deploy the stack**.  
-   *(Sempre que houver atualizações de código no GitHub, execute `git -C /srv/stacks/fade-to-black pull` e reconstrua a imagem via `docker compose build` ou recrie a stack no Portainer).*
+   *(Sempre que houver atualizações de código no GitHub, o botão **Recreate** do Portainer apenas recria o contêiner com a imagem antiga em cache; para aplicar o código novo, execute na VM `cd /srv/stacks/fade-to-black && sudo git pull && sudo docker compose up -d --build`.)*
 
 #### Opção B: Via Git Repository no Portainer (Sem Pasta Física Prévia)
 1. No Portainer, vá em **Stacks** $\to$ **Add stack**;
