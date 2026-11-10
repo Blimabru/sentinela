@@ -32,25 +32,33 @@ services:
     # ── 2. Exposição de Rede e Integração com Proxy Reverso ──────────────────
     ports:
       # Formato [IP_do_Host]:[Porta_do_Host]:[Porta_Contêiner]
-      # Publica a interface HTTP/WebSocket do noVNC (porta interna 8080) na
-      # porta externa incomum 18088 do servidor host para consumo pelo NGINX UI.
-      # NOTA DE SEGURANÇA: O vínculo explícito ao IP privado do host Docker
-      # ("10.100.2.101:18088:8080") restringe a escuta à rede interna, impedindo
-      # que scanners ou requisições externas diretas alcancem o contêiner.
-      - "10.100.2.101:18088:8080"
+      # Publica a interface HTTP/WebSocket do noVNC (porta interna 8080) usando
+      # as variáveis 'HOST_IP' e 'HOST_PORT' definidas no painel do Portainer.
+      # Caso não sejam declaradas, assume o IP privado 10.100.2.101 e a porta 18088.
+      # NOTA DE SEGURANÇA: O vínculo explícito ao IP privado do host Docker restringe
+      # a escuta à rede interna, impedindo acessos externos diretos fora do NGINX UI.
+      - "${HOST_IP:-10.100.2.101}:${HOST_PORT:-18088}:8080"
 
     # ── 3. Variáveis de Ambiente e Parâmetros Gráficos ────────────────────────
     environment:
       # Largura horizontal do framebuffer virtual Xvfb em pixels, alinhada à
-      # resolução nativa definida na classe GameApplication (800 px).
-      - DISPLAY_WIDTH=800
-      # Altura vertical do framebuffer virtual Xvfb em pixels (600 px).
-      - DISPLAY_HEIGHT=600
+      # resolução nativa definida na classe GameApplication (padrão: 800 px).
+      - DISPLAY_WIDTH=${DISPLAY_WIDTH:-800}
+      # Altura vertical do framebuffer virtual Xvfb em pixels (padrão: 600 px).
+      - DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-600}
       # Padroniza o fuso horário do sistema operacional interno do contêiner para
-      # assegurar precisão temporal nos registros de execução.
-      - TZ=America/Bahia
+      # assegurar precisão temporal nos registros de execução e capturas de tela.
+      - TZ=${TZ:-America/Bahia}
 
-    # ── 4. Monitoramento Ativo de Saúde (Healthcheck) ─────────────────────────
+    # ── 4. Persistência de Dados (Capturas de Tela) ───────────────────────────
+    volumes:
+      # Mapeia o diretório onde o jogo grava capturas de tela (tecla F12) para a
+      # subpasta correspondente à variável 'STACK_PATH' informada no Portainer.
+      # Evita caminhos fixos no arquivo Compose e preserva os arquivos PNG mesmo
+      # após recriações, atualizações de imagem ou reinicializações do contêiner.
+      - "${STACK_PATH:-/srv/stacks/fade-to-black}/screenshots:/app/docs/screenshots"
+
+    # ── 5. Monitoramento Ativo de Saúde (Healthcheck) ─────────────────────────
     healthcheck:
       # Verifica simultaneamente se o display virtual (Xvfb), a aplicação JVM
       # (fade-to-black.jar) e o servidor HTTP/WebSocket do noVNC (porta 8080) estão ativos.
@@ -65,7 +73,7 @@ services:
       # Período inicial de carência durante o boot para carregamento do X11 e da JVM.
       start_period: 20s
 
-    # ── 5. Controle e Rotação de Armazenamento de Logs ────────────────────────
+    # ── 6. Controle e Rotação de Armazenamento de Logs ────────────────────────
     logging:
       # Utiliza o driver padrão JSON do Docker para armazenamento estruturado de logs.
       driver: "json-file"
@@ -76,7 +84,7 @@ services:
         # Mantém no máximo 3 arquivos arquivados no histórico de rotação.
         max-file: "3"
 
-    # ── 6. Isolamento de Rede (Opcional para Proxy no Mesmo Host Docker) ──────
+    # ── 7. Isolamento de Rede (Opcional para Proxy no Mesmo Host Docker) ──────
     # Caso o NGINX UI esteja em execução no mesmo servidor Docker através de uma
     # rede virtual compartilhada, descomente o bloco abaixo para habilitar tráfego
     # interno pelo nome do serviço ('http://fade-to-black-game:8080'), podendo então
