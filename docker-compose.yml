@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  sentinela-game:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentinela-game
+    restart: unless-stopped
+    ports:
+      # Porta externa 8088 redirecionada para a porta web 8080 do noVNC no container
+      - "8088:8080"
+    environment:
+      - DISPLAY_WIDTH=800
+      - DISPLAY_HEIGHT=600
+    # Se o seu NGINX UI estiver em uma rede Docker compartilhada (ex: proxy_network),
+    # descomente as linhas abaixo para conectar o container diretamente a ela:
+    # networks:
+    #   - proxy_network
+
+# networks:
+#   proxy_network:
+#     external: true

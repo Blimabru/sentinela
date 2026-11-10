@@ -1,0 +1,8 @@
+.git
+.mvn
+target
+sentinela.jar
+docs
+jogar.bat
+jogar.sh
+README.md
