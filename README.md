@@ -327,7 +327,39 @@ Para viabilizar a auditoria científica do funcionamento dos algoritmos em tempo
 O projeto utiliza o **Maven Wrapper** embarcado, eliminando a necessidade de instalar ferramentas de compilação adicionais na máquina hospedeira.
 
 #### Pré-requisitos
-- **Java Development Kit (JDK) 17** ou superior com a variável de ambiente `JAVA_HOME` configurada.
+- **Java (JRE ou JDK) 17** ou superior instalado e disponível no terminal (`JAVA_HOME` ou no `PATH`).
+
+---
+
+### 📦 Execução via Pacote Compilado Standalone (Fat JAR)
+
+O projeto foi configurado com o `maven-assembly-plugin` e um ponto de inicialização `Launcher` desacoplado do Classpath para gerar um **arquivo executável único (`sentinela.jar`)**, que incorpora todo o código-fonte compilado e o runtime completo do JavaFX.
+
+Isso significa que **você pode enviar apenas o arquivo `sentinela.jar` para qualquer computador com Java 17+ instalado**, sem precisar que a outra máquina tenha Maven, Maven Wrapper, JDK completo ou JavaFX SDK configurados!
+
+#### 1. Como gerar o arquivo compilado (`sentinela.jar`):
+```powershell
+.\mvnw.cmd package -DskipTests
+```
+O Maven gerará o executável standalone na pasta raiz e em `target/sentinela.jar` (~9.1 MB).
+
+#### 2. Como rodar em qualquer PC (apenas com JRE 17+):
+Basta copiar o arquivo `sentinela.jar` (e opcionalmente o script `jogar.bat`) para a máquina de destino e executar:
+
+**Via Terminal / Prompt de Comando / PowerShell:**
+```powershell
+java -jar sentinela.jar
+```
+
+**Ou via scripts rápidos de inicialização:**
+- **No Windows:** Dê duplo clique no arquivo `jogar.bat`.
+- **No Linux / macOS:** Execute no terminal `./jogar.sh`.
+
+---
+
+### 🛠️ Execução em Modo de Desenvolvimento (Maven Wrapper)
+
+Caso queira executar diretamente a partir do código-fonte utilizando o Maven Wrapper embarcado:
 
 #### Execução Interativa:
 
