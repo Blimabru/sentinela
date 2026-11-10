@@ -4,9 +4,12 @@ import cloud.plataformatech.fadetoblack.core.GameEngine;
 import cloud.plataformatech.fadetoblack.world.MapType;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.scene.Group;
+import javafx.beans.value.ChangeListener;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.util.List;
@@ -41,9 +44,13 @@ public class GameApplication extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Project Fade to Black - IA & Telemetria");
 
-        // Lê a propriedade JVM opcional '-Drender.scale' (ex: 2.00 no Docker/Xvfb HiDPI).
-        // Por padrão, renderiza em escala nativa 1.0 (800x600). O fator mínimo é travado em 1.0
-        // para impedir redução abaixo da resolução lógica e consequente perda de legibilidade na HUD.
+        // Verifica antecipadamente se foi solicitado o modo headless/CLI de capturas
+        List<String> rawArgs = getParameters().getRaw();
+        boolean captureMode = rawArgs.contains("--capture-screenshots");
+
+        // Lê a propriedade JVM opcional '-Drender.scale' (ex.: 2.00 no Docker/Xvfb HiDPI).
+        // Quando omitida em execução desktop interativa (ex.: mvn javafx:run ou duplo clique),
+        // calcula automaticamente a escala ideal para ocupar ~88% da área útil do monitor mantendo 4:3.
         double renderScale = 1.0;
         String scaleProp = System.getProperty("render.scale");
         if (scaleProp != null && !scaleProp.isBlank()) {
@@ -52,17 +59,24 @@ public class GameApplication extends Application {
             } catch (NumberFormatException ignored) {
                 renderScale = 1.0;
             }
+        } else if (!captureMode) {
+            Rectangle2D visualBounds = Screen.getPrimary().getVisualBounds();
+            double autoFitScale = Math.min((visualBounds.getWidth() * 0.88) / WIDTH,
+                                           (visualBounds.getHeight() * 0.88) / HEIGHT);
+            renderScale = Math.max(1.0, autoFitScale);
         }
 
-        // Calcula as dimensões físicas reais do Canvas (ex: 1600x1200 em escala 2.0x).
-        // Dimensionar o backing buffer diretamente (em vez de escalar bitmap via SO/GTK) permite
-        // que o Renderer aplique transformação afim no GraphicsContext e desenhe vetores e fontes nítidos.
+        // Calcula as dimensões físicas iniciais do Canvas (ex.: 1600x1200 em escala 2.0x).
+        // Dimensionar o backing buffer diretamente permite ao Renderer aplicar transformação afim no
+        // GraphicsContext e desenhar vetores e fontes nítidos sem borramento bitmap.
         int canvasWidth = (int) Math.round(WIDTH * renderScale);
         int canvasHeight = (int) Math.round(HEIGHT * renderScale);
 
-        // Utiliza Group como nó raiz para que a Scene assuma exatamente o tamanho do Canvas
-        // sem margens automáticas ou redimensionamentos implícitos de containers de layout.
-        Group root = new Group();
+        // Utiliza StackPane com fundo escuro para centralizar o Canvas e habilitar redimensionamento
+        // responsivo (incluindo janela maximizada) mantendo a proporção 4:3 com faixas laterais discretas
+        StackPane root = new StackPane();
+        root.setMinSize(0, 0);
+        root.setStyle("-fx-background-color: #050505;");
         Scene scene = new Scene(root, canvasWidth, canvasHeight);
         primaryStage.setScene(scene);
 
@@ -72,10 +86,6 @@ public class GameApplication extends Application {
         // Conecta a cena (captura de teclado) e o canvas (superfície de desenho) ao motor principal
         GameEngine engine = new GameEngine(scene, canvas);
 
-        // Verifica se foi solicitado o modo headless/CLI para exportação automática de screenshots
-        List<String> rawArgs = getParameters().getRaw();
-        boolean captureMode = rawArgs.contains("--capture-screenshots");
-
         if (captureMode) {
             System.out.println("[Automated Capture] Iniciando geração de capturas de tela do projeto...");
             generateScreenshots(engine);
@@ -83,6 +93,25 @@ public class GameApplication extends Application {
             Platform.exit();
             return;
         }
+
+        // Redimensiona dinamicamente o buffer físico do Canvas sempre que o usuário ajustar ou maximizar
+        // a janela, preservando a proporção 4:3 e garantindo renderização vetorial nítida em tempo real
+        ChangeListener<Number> resizeListener = (obs, oldVal, newVal) -> {
+            double sw = scene.getWidth();
+            double sh = scene.getHeight();
+            if (sw > 0 && sh > 0) {
+                double fitScale = Math.min(sw / WIDTH, sh / HEIGHT);
+                canvas.setWidth(Math.max(1.0, WIDTH * fitScale));
+                canvas.setHeight(Math.max(1.0, HEIGHT * fitScale));
+            }
+        };
+        scene.widthProperty().addListener(resizeListener);
+        scene.heightProperty().addListener(resizeListener);
+
+        // Impede colapso excessivo da janela e centraliza em execuções desktop
+        primaryStage.setMinWidth(WIDTH / 2.0);
+        primaryStage.setMinHeight(HEIGHT / 2.0);
+        primaryStage.centerOnScreen();
 
         // Modo de execução normal interativo: inicia o AnimationTimer e exibe a janela
         engine.start();
