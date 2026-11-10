@@ -12,3 +12,4 @@ public class Launcher {
         GameApplication.main(args);
     }
 }
+

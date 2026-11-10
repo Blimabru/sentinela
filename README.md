@@ -331,29 +331,61 @@ O projeto utiliza o **Maven Wrapper** embarcado, eliminando a necessidade de ins
 
 ---
 
-### 📦 Execução via Pacote Compilado Standalone (Fat JAR)
+### 📦 Tutorial: Compilação e Distribuição do Executável Standalone (JAR)
 
-O projeto foi configurado com o `maven-assembly-plugin` e um ponto de inicialização `Launcher` desacoplado do Classpath para gerar um **arquivo executável único (`sentinela.jar`)**, que incorpora todo o código-fonte compilado e o runtime completo do JavaFX.
+O projeto foi estruturado para que você possa gerar uma distribuição compilada única e autônoma (**Fat JAR / Uber JAR**). Esse arquivo empacota todo o código compilado da aplicação, os recursos gráficos e o runtime completo do OpenJFX em um único arquivo de aproximadamente ~9.1 MB (`sentinela.jar`).
 
-Isso significa que **você pode enviar apenas o arquivo `sentinela.jar` para qualquer computador com Java 17+ instalado**, sem precisar que a outra máquina tenha Maven, Maven Wrapper, JDK completo ou JavaFX SDK configurados!
+---
 
-#### 1. Como gerar o arquivo compilado (`sentinela.jar`):
+#### 1. Como Compilar o Jogo (Gerar o `sentinela.jar`)
+
+Para compilar do zero e gerar o arquivo executável final, execute o comando abaixo no terminal na pasta raiz do projeto:
+
+**No Windows (PowerShell / CMD):**
 ```powershell
-.\mvnw.cmd package -DskipTests
-```
-O Maven gerará o executável standalone na pasta raiz e em `target/sentinela.jar` (~9.1 MB).
-
-#### 2. Como rodar em qualquer PC (apenas com JRE 17+):
-Basta copiar o arquivo `sentinela.jar` (e opcionalmente o script `jogar.bat`) para a máquina de destino e executar:
-
-**Via Terminal / Prompt de Comando / PowerShell:**
-```powershell
-java -jar sentinela.jar
+.\mvnw.cmd clean package -DskipTests
 ```
 
-**Ou via scripts rápidos de inicialização:**
-- **No Windows:** Dê duplo clique no arquivo `jogar.bat`.
-- **No Linux / macOS:** Execute no terminal `./jogar.sh`.
+**No Linux ou macOS (Bash):**
+```bash
+./mvnw clean package -DskipTests
+```
+
+> **O que o Maven faz nos bastidores?**  
+> 1. Compila todas as classes em bytecode compativel com Java 17 (`target/classes`);
+> 2. Executa o `maven-assembly-plugin` (versão 3.7.1) com o descritor `jar-with-dependencies`;
+> 3. Descompacta e embute os binários gráficos do JavaFX (`javafx-controls` e `javafx-graphics`);
+> 4. Insere no manifesto `META-INF/MANIFEST.MF` a diretiva `Main-Class: cloud.plataformatech.fadetoblack.app.Launcher`;
+> 5. Gera o arquivo final pronto para distribuição: `target/sentinela.jar` (e uma cópia na raiz `sentinela.jar`).
+
+---
+
+#### 2. Como Abrir o Jogo via Duplo Clique no `.jar`
+
+**Sim! Você pode abrir o jogo dando apenas um duplo clique diretamente no arquivo `sentinela.jar`.**
+
+Como o manifesto do JAR já aponta para a classe `Launcher`, o Windows identifica o arquivo como uma aplicação executável e invoca o `javaw.exe` automaticamente.
+
+##### ⚠️ O que fazer se o duplo clique abrir o WinRAR/7-Zip ou não fizer nada?
+Em algumas máquinas Windows, programas descompactadores (como WinRAR ou 7-Zip) sequestram a extensão `.jar` para si, abrindo o jogo como se fosse um arquivo compactado, ou o Windows não tem o `-jar` configurado no registro. Caso isso aconteça, você tem três opções simples:
+
+* **Opção A (Mais Fácil):** Dê um duplo clique no arquivo **[`jogar.bat`](jogar.bat)** (ou execute `./jogar.sh` no Linux/macOS). O script garante a execução com o comando `java -jar` correto em 100% dos computadores.
+* **Opção B (Configurar Duplo Clique Permanente no Windows):**
+  1. Clique com o **botão direito** no arquivo `sentinela.jar` $\to$ **Abrir com** $\to$ **Escolher outro aplicativo**;
+  2. Procure por `Java(TM) Platform SE binary` ou navegue até `C:\Arquivos de Programas\Java\...\bin\javaw.exe`;
+  3. Marque a caixa de seleção: **"Sempre usar este aplicativo para abrir arquivos .jar"** e clique em OK.
+* **Opção C (Via Terminal):**
+  ```powershell
+  java -jar sentinela.jar
+  ```
+
+---
+
+#### 3. Como Rodar em Qualquer Computador (com apenas o JRE 17+)
+Para enviar o jogo para outra pessoa ou testar em outro computador:
+1. Copie apenas o arquivo **`sentinela.jar`** (e opcionalmente o script `jogar.bat`);
+2. O computador de destino só precisa ter o **Java 17 (JRE ou JDK)** instalado;
+3. Não é necessário ter Maven, Git, Eclipse, VS Code ou qualquer SDK configurado. O jogo roda instantaneamente!
 
 ---
 
